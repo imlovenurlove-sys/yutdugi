@@ -594,6 +594,992 @@
   function later(fn, ms) { const t = setTimeout(fn, ms); timers.push(t); return t; }
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const tabStore = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
+
+  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  function setMode(m) {
+    S.mode = m;
+    document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.mode === m));
+    $('#onlineOpts').hidden = m !== 'online';
+    $('#localOpts').hidden = m === 'online';
+    $('#ruleOpts').hidden = m === 'online';
+    $('#aiOpts').style.display = m === 'ai' ? '' : 'none';
+    $('#startBtn').hidden = m === 'online';
+  }
+  function seg(id, cb) {
+    $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); cb(+b.dataset.v);
+    }));
+  }
+  function setSeg(id, v) { $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', +x.dataset.v === +v)); }
+  seg('#sideSeg', v => S.human = v);
+  seg('#lvSeg', v => S.depth = v);
+  seg('#finSeg', v => S.exact = !!v);
+  seg('#pieSeg', v => S.pie = !!v);
+  seg('#finSeg2', v => S.exact = !!v);
+  seg('#pieSeg2', v => S.pie = !!v);
+  $('#startBtn').addEventListener('click', () => startLocal(false));
+  $('#againBtn').addEventListener('click', () => { if (S.mode === 'online') { if (S.isHost) hostStart(true); } else startLocal(true); });
+  $('#toLobby').addEventListener('click', () => { leaveNet(); show('lobby'); });
+  $('#quitBtn').addEventListener('click', () => { if (confirm('판을 접을까요?')) { clearTimers(); leaveNet(); show('lobby'); } });
+  document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => { $('#m' + (b.dataset.open === 'rules' ? 'Rules' : 'About')).hidden = false; }));
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal').hidden = true));
+  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.hidden = true; }));
+  $('#hintBtn').addEventListener('click', hint);
+  $('#pieKeep').addEventListener('click', () => pieDecide(false, false));
+  $('#pieSwap').addEventListener('click', () => pieDecide(true, false));
+
+  function show(id) { ['lobby', 'room', 'game', 'result'].forEach(s => $('#' + s).hidden = s !== id); }
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); later(() => el.classList.remove('on'), 2000); }
+
+  function buildBoard() {
+    const svg = $('#board');
+    let h = '';
+    h += `<rect x="10" y="10" width="80" height="80" class="lines"/>`;
+    h += `<line x1="90" y1="10" x2="10" y2="90" class="lines"/><line x1="10" y1="10" x2="90" y2="90" class="lines"/>`;
+    for (let n = 0; n <= 28; n++) {
+      const [x, y] = P[n];
+      if (BIG.has(n)) h += `<circle cx="${x}" cy="${y}" r="5.2" class="node big"/><circle cx="${x}" cy="${y}" r="3.2" class="node big"/>`;
+      else h += `<circle cx="${x}" cy="${y}" r="3.1" class="node"/>`;
+    }
+    h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">출발 · 도착</text>`;
+    for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<circle cx="${x}" cy="${y}" r="6.2" class="target" data-node="${n}"/>`; }
+    for (let p = 0; p < 2; p++) for (let i = 0; i < 4; i++) {
+      h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="ring" r="5"/><circle class="body" r="3.6"/><text class="cnt"></text></g>`;
+    }
+    svg.innerHTML = h;
+    svg.querySelectorAll('.target').forEach(t => t.addEventListener('click', () => onTarget(+t.dataset.node)));
+    svg.querySelectorAll('.piece').forEach(pc => pc.addEventListener('click', () => onPiece(pc)));
+  }
+
+  function startLocal(rematch) {
+    clearTimers();
+    if (rematch) {
+      if (S.mode === 'ai') { S.human = 1 - S.human; setSeg('#sideSeg', S.human); }
+      else { const a = $('#n0').value; $('#n0').value = $('#n1').value; $('#n1').value = a; }
+    }
+    beginGame([$('#n0').value.trim() || '청', $('#n1').value.trim() || '홍'], { exactFinish: S.exact, pie: S.pie });
+  }
+  function beginGame(names, cfg) {
+    S.names = names;
+    S.exact = !!cfg.exactFinish; S.pie = !!cfg.pie;
+    S.g = Y.newGame({ exactFinish: S.exact, names });
+    S.stats = { cap: 0, stack: 0 };
+    S.busy = false; S.pieState = S.pie ? 'wait' : null;
+    $('#name0').textContent = names[0]; $('#name1').textContent = names[1];
+    $('#log').innerHTML = '';
+    $('#piePanel').hidden = true;
+    buildSticks();
+    show('game');
+    render();
+    maybeAI();
+  }
+
+  function controls(p) {
+    if (S.mode === 'hotseat') return true;
+    if (S.mode === 'ai') return p === S.human;
+    return S.sides && S.sides[S.myId] === p;
+  }
+  function isAI(p) { return S.mode === 'ai' && p !== S.human; }
+
+  function buildSticks() {
+    for (let p = 0; p < 2; p++) {
+      const box = $('#sticks' + p); box.innerHTML = '';
+      for (let s = 0; s < 2; s++) {
+        const b = document.createElement('button');
+        b.className = 'stick down'; b.dataset.p = p; b.dataset.s = s; b.setAttribute('aria-label', `${S.names[p]} 가락 ${s + 1}`);
+        b.innerHTML = '<span class="face flat"></span><span class="face round"></span><span class="hint"></span>';
+        b.addEventListener('click', () => onStick(p, s));
+        box.appendChild(b);
+      }
+    }
+  }
+
+  function render() {
+    const g = S.g;
+    const cur = g.turn;
+    const flipped = !!g.pending;
+    const paused = S.pieState === 'ask';
+    for (let p = 0; p < 2; p++) {
+      const canP = p === cur && !flipped && controls(p) && !S.busy && !paused && g.winner == null;
+      $('#sticks' + p).classList.toggle('with-hints', canP);
+      $('#sticks' + p).querySelectorAll('.stick').forEach(b => {
+        const s = +b.dataset.s;
+        b.classList.toggle('up', g.sticks[p][s]); b.classList.toggle('down', !g.sticks[p][s]);
+        b.classList.toggle('can', canP);
+        b.querySelector('.hint').textContent = canP ? '→ ' + Y.RESULT[Y.countUp(g.sticks) + (g.sticks[p][s] ? -1 : 1)] : '';
+        b.disabled = !canP;
+      });
+      $('#side' + p).classList.toggle('active', p === cur && g.winner == null);
+      const home = $('#home' + p);
+      const atHome = g.pieces[p].filter(pc => !pc.done && pc.idx === 0 && pc.route === 'OUTER').length;
+      const done = g.pieces[p].filter(pc => pc.done).length;
+      home.innerHTML = Array.from({ length: atHome }, () => '<span class="pc"></span>').join('') + `<span class="cnt">집 ${atHome} · 완주 ${done}</span>`;
+    }
+    const groups = {};
+    for (let p = 0; p < 2; p++) g.pieces[p].forEach((pc, i) => {
+      const el = $('#pc' + p + i);
+      const n = Y.nodeOf(pc);
+      const onBoard = !pc.done && n !== 0;
+      el.classList.toggle('hidden', !onBoard);
+      if (onBoard) {
+        const key = p + ':' + n; groups[key] = (groups[key] || []); groups[key].push(i);
+        const [x, y] = P[n]; el.style.transform = `translate(${x}px, ${y}px)`;
+      }
+    });
+    for (let p = 0; p < 2; p++) g.pieces[p].forEach((pc, i) => {
+      const el = $('#pc' + p + i); const n = Y.nodeOf(pc);
+      const grp = groups[p + ':' + n] || [];
+      const lead = grp[0] === i;
+      if (!pc.done && n !== 0) { el.classList.toggle('hidden', !lead); el.querySelector('.cnt').textContent = grp.length > 1 ? grp.length : ''; }
+      el.classList.remove('can');
+    });
+    document.querySelectorAll('.target').forEach(t => { t.classList.remove('on', 'cap'); });
+    $('#home0').classList.remove('can'); $('#home1').classList.remove('can');
+    if (flipped && controls(cur) && !S.busy && g.winner == null) {
+      const opts = Y.moveOptions(g);
+      opts.forEach(o => {
+        if (o.from === 0) $('#home' + cur).classList.add('can');
+        else { const grp = groups[cur + ':' + o.from]; if (grp) $('#pc' + cur + grp[0]).classList.add('can'); }
+        if (o.to !== Y.F) { const t = document.querySelector(`.target[data-node="${o.to}"]`); if (t) { t.classList.add('on'); if (o.captures.length) t.classList.add('cap'); } }
+      });
+    }
+    for (let p = 0; p < 2; p++) $('#name' + p).textContent = S.names[p] + (S.mode === 'online' && controls(p) ? ' (나)' : '');
+    const who = $('#stWho'), msg = $('#stMsg'), big = $('#stBig');
+    if (g.winner != null) { who.textContent = '판 끝'; msg.textContent = g.winner === -1 ? '같은 국면이 세 번 — 무승부' : `${S.names[g.winner]} 승`; big.innerHTML = ''; return; }
+    who.textContent = `${S.names[cur]}의 차례 · ${g.ply + 1}수`;
+    if (paused) {
+      msg.textContent = controls(1) ? '셋째 수를 보고 편을 고르세요.' : `${S.names[1]}이(가) 편을 고르는 중…`;
+      big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
+    } else if (!flipped) {
+      const fo = Y.flipOptions(g);
+      if (isAI(cur)) msg.textContent = '컴퓨터가 수를 읽는 중…';
+      else if (!controls(cur)) msg.textContent = `${S.names[cur]}이(가) 가락을 고르는 중…`;
+      else if (g.ply === 0) msg.textContent = '첫 수는 도. 가락 하나를 눌러 뒤집으세요.';
+      else if (g.ply === 1) msg.textContent = '둘째 수는 개. 가락 하나를 눌러 뒤집으세요.';
+      else if (fo.length === 1) msg.textContent = `어느 가락을 뒤집어도 ${Y.RESULT[fo[0].result]}. 가락을 누르세요.`;
+      else msg.textContent = `${Y.RESULT[fo[0].result]} 또는 ${Y.RESULT[fo[1].result]} — 가락을 골라 뒤집으세요.`;
+      big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
+    } else {
+      msg.textContent = controls(cur) ? `${Y.RESULT[g.result]} — ${Y.STEPS[g.result]}칸. 옮길 말을 누르세요.` : `${Y.RESULT[g.result]} — ${S.names[cur]}이(가) 말을 옮깁니다.`;
+      big.innerHTML = `${Y.RESULT[g.result]}<small>${Y.STEPS[g.result]}칸</small>`;
+    }
+    $('#hintBtn').hidden = S.mode === 'online';
+  }
+
+  function onStick(p, s) {
+    const g = S.g;
+    if (S.busy || g.winner != null || g.pending || p !== g.turn || !controls(p) || S.pieState === 'ask') return;
+    doFlip(s, false);
+  }
+  function doFlip(s, remote) {
+    S.g = Y.flip(S.g, s);
+    if (!remote) send('flip', { ply: S.g.ply, stick: s });
+    render();
+    const opts = Y.moveOptions(S.g);
+    if (!remote && opts.length === 1) { S.busy = true; later(() => { S.busy = false; doMove(opts[0].from, false); }, 650); }
+  }
+  function onPiece(el) {
+    const g = S.g; if (!g.pending || S.busy || !controls(g.turn)) return;
+    if (+el.dataset.p !== g.turn) return;
+    const from = Y.nodeOf(g.pieces[g.turn][+el.dataset.i]);
+    if (Y.moveOptions(g).some(o => o.from === from)) doMove(from, false);
+  }
+  function onTarget(node) {
+    const g = S.g; if (!g.pending || S.busy || !controls(g.turn)) return;
+    const o = Y.moveOptions(g).find(o => o.to === node);
+    if (o) doMove(o.from, false);
+  }
+  for (let p = 0; p < 2; p++) $('#home' + p).addEventListener('click', () => {
+    const g = S.g; if (!g || !g.pending || S.busy || p !== g.turn || !controls(p)) return;
+    if (Y.moveOptions(g).some(o => o.from === 0)) doMove(0, false);
+  });
+
+  function doMove(from, remote) {
+    const g = S.g;
+    const opt = Y.moveOptions(g).find(o => o.from === from);
+    if (!opt) return;
+    S.g = Y.move(g, from);
+    if (!remote) send('move', { ply: S.g.ply, from });
+    if (opt.captures.length) S.stats.cap++;
+    if (opt.stacks.length) S.stats.stack++;
+    addLog(g.turn, g.result, opt);
+    render();
+    if (opt.captures.length) toast(`${S.names[g.turn]}이(가) ${S.names[1 - g.turn]}의 말 ${opt.captures.length}동을 잡았다`);
+    else if (opt.to === Y.F) toast(`${S.names[g.turn]} 말 ${opt.ids.length + opt.stacks.length}동 완주`);
+    if (S.g.winner != null) { later(showResult, 1200); return; }
+    if (S.pieState === 'wait' && S.g.ply === 3) { S.pieState = 'ask'; pieAsk(); return; }
+    maybeAI();
+  }
+
+  function pieAsk() {
+    render();
+    const panel = $('#piePanel');
+    if (isAI(1)) {
+      panel.hidden = true;
+      later(() => { const swap = Y.valueOf(S.g, Math.max(S.depth, 4), 0) > Y.valueOf(S.g, Math.max(S.depth, 4), 1); pieDecide(swap, false); }, 700);
+      return;
+    }
+    if (controls(1)) { panel.hidden = false; $('#pieMsg').textContent = `${S.names[0]}이(가) 셋째 수를 두었습니다. 지금 판을 보고 청(먼저)과 홍(나중) 중 어느 편을 가질지 고르세요.`; }
+    else panel.hidden = true;
+  }
+  function pieDecide(swap, remote) {
+    if (S.pieState !== 'ask') return;
+    S.pieState = 'done';
+    $('#piePanel').hidden = true;
+    if (!remote) send('pie', { swap });
+    if (swap) {
+      if (S.mode === 'ai') S.human = 1 - S.human;
+      else if (S.mode === 'hotseat') { S.names = [S.names[1], S.names[0]]; $('#n0').value = S.names[0]; $('#n1').value = S.names[1]; }
+      else if (S.sides) { const ids = Object.keys(S.sides); ids.forEach(id => S.sides[id] = 1 - S.sides[id]); S.names = [S.names[1], S.names[0]]; }
+      toast('편을 바꿨습니다');
+    } else toast('편을 그대로 둡니다');
+    render();
+    maybeAI();
+  }
+
+  function addLog(p, r, opt) {
+    const where = n => n === 0 ? '집' : n === Y.F ? '완주' : n === 22 ? '가운데' : n === Y.START ? '출발점' : n + '칸';
+    const extra = (opt.captures.length ? ' · 잡음' : '') + (opt.stacks.length ? ' · 업음' : '');
+    const line = document.createElement('div');
+    line.innerHTML = `${S.g.ply}. <b>${S.names[p]}</b> ${Y.RESULT[r]} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
+    $('#log').prepend(line);
+  }
+
+  function maybeAI() {
+    const g = S.g;
+    if (g.winner != null || !isAI(g.turn) || S.pieState === 'ask') return;
+    S.busy = true; render();
+    later(() => {
+      const m = Y.bestMove(S.g, S.depth);
+      S.g = Y.flip(S.g, m.stick); render();
+      later(() => { S.busy = false; doMove(m.from, false); }, 750);
+    }, 500);
+  }
+
+  function hint() {
+    const g = S.g; if (!g || g.winner != null || !controls(g.turn) || S.busy || S.pieState === 'ask') return;
+    if (g.pending) {
+      const opts = Y.moveOptions(g);
+      let best = null, bv = -Infinity;
+      opts.forEach(o => { const v = Y.evaluate(Y.move(g, o.from), g.turn); if (v > bv) { bv = v; best = o; } });
+      toast(`훈수: ${best.from === 0 ? '새 말을 내보내세요' : best.from + '칸의 말을 옮기세요'}`);
+    } else {
+      const m = Y.bestMove(g, Math.max(S.depth, 4));
+      const stick = $(`#sticks${g.turn} .stick[data-s="${m.stick}"]`);
+      stick.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 500, iterations: 2 });
+      toast(`훈수: ${m.stick + 1}번 가락을 뒤집어 ${Y.RESULT[m.result]} → ${m.from === 0 ? '새 말' : m.from + '칸 말'}을 ${m.to === Y.F ? '완주' : m.to + '칸으로'}${m.captures.length ? ' (잡기)' : ''}`);
+    }
+  }
+
+  function showResult() {
+    const g = S.g;
+    if (g.winner === -1) { $('#resTitle').textContent = '무승부'; $('#resSub').textContent = '같은 국면이 세 번 되풀이되었습니다.'; }
+    else {
+      const mine = S.mode === 'online' ? (controls(g.winner) ? ' — 내가 이겼다' : (S.sides && S.sides[S.myId] != null ? ' — 내가 졌다' : '')) : '';
+      $('#resTitle').textContent = `${S.names[g.winner]} 승`; $('#resSub').textContent = (g.winner === 0 ? '청이' : '홍이') + ' 네 동을 모두 내보냈습니다.' + mine;
+    }
+    $('#rsPly').textContent = g.ply; $('#rsCap').textContent = S.stats.cap; $('#rsStack').textContent = S.stats.stack;
+    $('#againBtn').hidden = S.mode === 'online' && !S.isHost;
+    $('#againNote').hidden = !(S.mode === 'online' && !S.isHost);
+    show('result');
+  }
+
+  const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function makeCode() { let c = ''; for (let i = 0; i < 4; i++) c += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return c; }
+  function myName() { const n = ($('#nick').value || '').trim(); if (n) store.set('nick', n); return n || '손님'; }
+  function send(type, payload) {
+    if (S.mode !== 'online' || !S.net) return;
+    S.net.send({ type: 'broadcast', event: type, payload: Object.assign({ from: S.myId }, payload) });
+  }
+  function setConn(t, off) { ['#conn', '#connGame'].forEach(id => { const el = $(id); el.textContent = t; el.classList.toggle('off', !!off); }); }
+
+  $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast('온라인 연결 모듈을 불러오지 못했습니다. 새로고침해 주세요.'); enterRoom(makeCode(), true); });
+  $('#joinRoomBtn').addEventListener('click', () => { $('#joinField').hidden = false; $('#codeIn').focus(); });
+  $('#codeIn').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); e.target.value = v; if (v.length === 4) enterRoom(v, false); });
+  $('#leaveRoom').addEventListener('click', () => { leaveNet(); show('lobby'); });
+  $('#roomStart').addEventListener('click', () => hostStart(false));
+  $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(roomLink()); toast('링크를 복사했습니다'); } catch (e) { toast(roomLink()); } });
+  $('#shareLink').addEventListener('click', async () => {
+    const data = { title: '윷두기', text: `윷두기 한 판 둘까요? 방 코드 ${S.room}`, url: roomLink() };
+    if (navigator.share) { try { await navigator.share(data); } catch (e) {} } else { try { await navigator.clipboard.writeText(roomLink()); toast('링크를 복사했습니다'); } catch (e) { toast(roomLink()); } }
+  });
+  function roomLink() { const u = new URL(location.href); u.search = '?room=' + S.room; return u.toString(); }
+
+  let client = null;
+  function enterRoom(code, host) {
+    if (!window.supabase) return toast('온라인 연결 모듈을 불러오지 못했습니다. 새로고침해 주세요.');
+    if (!client) client = supabase.createClient(SUPA_URL, SUPA_KEY, { realtime: { params: { eventsPerSecond: 20 } } });
+    leaveNet();
+    S.mode = 'online'; S.room = code; S.isHost = host; S.myId = tabStore.get('pid') || (Math.random().toString(36).slice(2, 10)); tabStore.set('pid', S.myId);
+    S.sides = null; S.peers = [];
+    $('#roomCode').textContent = code; $('#players').innerHTML = ''; $('#hostPanel').hidden = !host; $('#guestNote').hidden = host;
+    setConn('연결 중…');
+    show('room');
+    const ch = client.channel('yut:' + code, { config: { presence: { key: S.myId }, broadcast: { self: false } } });
+    S.net = ch;
+    ch.on('presence', { event: 'sync' }, () => {
+      const st = ch.presenceState();
+      const peers = Object.keys(st).map(k => ({ id: k, name: st[k][0].name, ts: st[k][0].ts })).sort((a, b) => a.ts - b.ts);
+      S.peers = peers;
+      S.isHost = peers.length > 0 && peers[0].id === S.myId;
+      renderRoom();
+      if (S.g && S.sides) render();
+    });
+    ch.on('broadcast', { event: 'start' }, ({ payload }) => onStart(payload));
+    ch.on('broadcast', { event: 'flip' }, ({ payload }) => { if (!S.g || S.g.pending || payload.ply !== S.g.ply) return requestSync(); doFlip(payload.stick, true); });
+    ch.on('broadcast', { event: 'move' }, ({ payload }) => { if (!S.g || !S.g.pending || payload.ply !== S.g.ply + 1) return requestSync(); doMove(payload.from, true); });
+    ch.on('broadcast', { event: 'pie' }, ({ payload }) => pieDecide(!!payload.swap, true));
+    ch.on('broadcast', { event: 'hello' }, ({ payload }) => { if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie }, pieState: S.pieState, stats: S.stats }); });
+    ch.on('broadcast', { event: 'state' }, ({ payload }) => {
+      if (S.g && S.g.ply >= payload.g.ply && $('#game').hidden === false) return;
+      S.names = payload.names; S.sides = payload.sides; S.exact = !!payload.cfg.exactFinish; S.pie = !!payload.cfg.pie; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
+      S.g = payload.g; $('#name0').textContent = S.names[0]; $('#name1').textContent = S.names[1];
+      $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => n === 0 ? '집' : n === Y.F ? '완주' : n === 22 ? '가운데' : n === Y.START ? '출발점' : n + '칸'; line.innerHTML = (i + 1) + '. <b>' + S.names[h.p] + '</b> ' + Y.RESULT[h.result] + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? ' · 잡음' : '') + (h.stacked ? ' · 업음' : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
+      if (S.pieState === 'ask') pieAsk();
+      if (S.g.winner != null) showResult();
+    });
+    ch.subscribe(async status => {
+      if (status === 'SUBSCRIBED') { setConn('연결됨'); await ch.track({ name: myName(), ts: Date.now() }); send('hello', {}); }
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setConn('연결이 끊겼습니다 — 다시 시도 중', true);
+      else if (status === 'CLOSED') setConn('연결 종료', true);
+    });
+  }
+  function requestSync() { send('hello', {}); }
+  function leaveNet() { if (S.net) { try { S.net.untrack(); client.removeChannel(S.net); } catch (e) {} S.net = null; } }
+  function renderRoom() {
+    const box = $('#players');
+    const rows = S.peers.slice(0, 2).map((p, i) => `<div class="player p${i}"><span class="dot"></span><span>${esc(p.name)}</span><span class="me">${p.id === S.myId ? '나' : ''}${i === 0 ? ' · 방장' : ''}</span></div>`);
+    while (rows.length < 2) rows.push('<div class="player empty"><span class="dot"></span><span>상대를 기다리는 중…</span></div>');
+    if (S.peers.length > 2) rows.push(`<div class="player"><span class="dot"></span><span>구경 ${S.peers.length - 2}명</span></div>`);
+    box.innerHTML = rows.join('');
+    $('#hostPanel').hidden = !S.isHost; $('#guestNote').hidden = S.isHost;
+    const ready = S.peers.length >= 2;
+    $('#roomStart').disabled = !ready; $('#roomStart').textContent = ready ? '판 벌이기' : '상대를 기다리는 중…';
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  let lastFirst = null;
+  function hostStart(rematch) {
+    if (S.peers.length < 2) return;
+    const [a, b] = S.peers;
+    let first = rematch && lastFirst ? (lastFirst === a.id ? b.id : a.id) : (Math.random() < 0.5 ? a.id : b.id);
+    lastFirst = first;
+    const sides = {}; sides[first] = 0; sides[first === a.id ? b.id : a.id] = 1;
+    const names = [first === a.id ? a.name : b.name, first === a.id ? b.name : a.name];
+    const payload = { sides, names, cfg: { exactFinish: S.exact, pie: S.pie } };
+    send('start', payload); onStart(payload);
+  }
+  function onStart(p) {
+    S.sides = p.sides; lastFirst = Object.keys(p.sides).find(k => p.sides[k] === 0);
+    beginGame(p.names, p.cfg);
+  }
+
+  buildBoard();
+  const saved = store.get('nick'); if (saved) $('#nick').value = saved;
+  const qs = new URLSearchParams(location.search);
+  const rq = (qs.get('room') || '').toUpperCase();
+  if (rq && /^[A-Z0-9]{4}$/.test(rq)) { setMode('online'); if (!$('#nick').value) { const n = prompt('내 이름을 적어주세요'); if (n) $('#nick').value = n.slice(0, 8); } enterRoom(rq, false); }
+  else if (!SUPA_URL) { document.querySelector('.mode[data-mode="online"]').hidden = true; setMode('ai'); }
+  else setMode('online');
+})();
+</script>
+</body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#F1E8D6"><style>[hidden]{display:none!important} img{max-width:100%}</style><title>윷두기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap">
+<style>
+  :root {
+    --paper: #F1E8D6;
+    --paper-2: #E6DAC1;
+    --ink: #2A2622;
+    --ink-2: #5C544B;
+    --ink-3: #9A9083;
+    --line: #6E655A;
+    --cheong: #2F5FC4;
+    --cheong-2: #1E3F8A;
+    --hong: #C93D34;
+    --hong-2: #8E2620;
+    --wood-flat: #D9B57C;
+    --wood-flat-2: #B8935A;
+    --wood-round: #6E4A2B;
+    --wood-round-2: #4A2F18;
+    --gold: #B8892E;
+    --ok: #3C7A4A;
+    --focus: #B8892E;
+    --shadow: 0 6px 20px rgba(42,38,34,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1E3835;
+      --paper-2: #17302D;
+      --ink: #F0E8D8;
+      --ink-2: #C9BFAA;
+      --ink-3: #8A9A8E;
+      --line: #A9B8AE;
+      --cheong: #6C95F0;
+      --cheong-2: #3A63C8;
+      --hong: #F0655A;
+      --hong-2: #C63E35;
+      --wood-flat: #E2C08A;
+      --wood-flat-2: #C4A066;
+      --wood-round: #7A5233;
+      --wood-round-2: #4E321B;
+      --gold: #E0B25A;
+      --ok: #7CC48E;
+      --focus: #E0B25A;
+      --shadow: 0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1E3835; --paper-2: #17302D; --ink: #F0E8D8; --ink-2: #C9BFAA; --ink-3: #8A9A8E; --line: #A9B8AE;
+    --cheong: #6C95F0; --cheong-2: #3A63C8; --hong: #F0655A; --hong-2: #C63E35;
+    --wood-flat: #E2C08A; --wood-flat-2: #C4A066; --wood-round: #7A5233; --wood-round-2: #4E321B;
+    --gold: #E0B25A; --ok: #7CC48E; --focus: #E0B25A; --shadow: 0 6px 20px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .serif { font-family: "Gowun Batang", "Nanum Myeongjo", serif; text-wrap: balance; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 12px 14px 28px; }
+  .screen[hidden] { display: none !important; }
+
+  .lobby-head { text-align: center; padding: 28px 0 10px; }
+  .lobby-head h1 { font-size: 52px; margin: 0; letter-spacing: .08em; font-weight: 700; }
+  .lobby-head p { margin: 6px 0 0; color: var(--ink-2); }
+  .eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+  .mode-list { display: grid; gap: 10px; margin: 22px 0 8px; }
+  .mode {
+    display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; text-align: left;
+    background: var(--paper-2); border: 1.5px solid transparent; border-radius: 10px; padding: 14px 16px;
+  }
+  .mode[aria-pressed="true"] { border-color: var(--gold); }
+  .mode .glyph { display: flex; justify-content: center; align-items: center; }
+  .mode b { display: block; font-size: 16px; }
+  .mode span { color: var(--ink-2); font-size: 13px; }
+  .field { display: grid; gap: 6px; margin-top: 12px; }
+  .field label { font-size: 13px; color: var(--ink-2); }
+  .field input, .field select {
+    font: inherit; color: var(--ink); background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; padding: 9px 6px; border-radius: 8px; border: 1px solid var(--line); background: transparent; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .primary {
+    width: 100%; margin-top: 18px; padding: 15px; border-radius: 10px; border: 0;
+    background: var(--ink); color: var(--paper); font-size: 17px; font-family: "Gowun Batang", serif; font-weight: 700; letter-spacing: .1em;
+  }
+  .primary:disabled { opacity: .5; cursor: default; }
+  .ghost { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+  .lobby-foot { margin-top: 18px; display: flex; justify-content: center; gap: 10px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .topbar h2 { font-size: 20px; margin: 0; letter-spacing: .12em; }
+  .topbar .tools { display: flex; gap: 6px; }
+
+  .status {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 10px; background: var(--paper-2); margin-bottom: 10px; min-height: 58px;
+  }
+  .status .who { font-size: 12px; color: var(--ink-3); letter-spacing: .1em; }
+  .status .msg { font-size: 15px; }
+  .status .big {
+    font-family: "Gowun Batang", serif; font-size: 34px; font-weight: 700; line-height: 1; min-width: 44px; text-align: center;
+    color: var(--gold);
+  }
+  .status .big small { display: block; font-size: 11px; color: var(--ink-3); font-family: "Gowun Dodum", sans-serif; letter-spacing: .1em; margin-top: 2px; }
+
+  .side { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 6px 4px; }
+  .side .name { font-size: 14px; display: flex; align-items: center; gap: 6px; min-width: 64px; }
+  .side .name .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .side.p0 .dot { background: var(--cheong); } .side.p1 .dot { background: var(--hong); }
+  .side .name .tag { font-size: 11px; color: var(--ink-3); }
+  .side.active .name { font-weight: 700; }
+
+  .sticks { display: flex; gap: 12px; justify-content: center; }
+  .stick {
+    width: 42px; height: 96px; border-radius: 21px; border: 0; padding: 0; position: relative;
+    perspective: 400px; background: transparent;
+  }
+  .stick .face {
+    position: absolute; inset: 0; border-radius: 21px; transition: transform .45s cubic-bezier(.4,0,.2,1);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 8px rgba(0,0,0,.25);
+  }
+  .stick .flat {
+    background: linear-gradient(90deg, var(--wood-flat-2), var(--wood-flat) 35%, var(--wood-flat) 65%, var(--wood-flat-2));
+  }
+  .stick .flat::after {
+    content: ""; position: absolute; inset: 10px 14px; border-radius: 12px;
+    background: repeating-linear-gradient(180deg, transparent 0 7px, rgba(90,60,20,.14) 7px 8px);
+  }
+  .stick .round {
+    background: radial-gradient(120% 60% at 50% 40%, var(--wood-round) 0%, var(--wood-round-2) 100%);
+    transform: rotateY(180deg);
+  }
+  .stick.up .round { transform: rotateY(180deg); }
+  .stick.up .flat { transform: rotateY(0deg); }
+  .stick.down .flat { transform: rotateY(180deg); }
+  .stick.down .round { transform: rotateY(360deg); }
+  .stick .hint {
+    position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%);
+    font-family: "Gowun Batang", serif; font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap;
+    opacity: 0; transition: opacity .2s;
+  }
+  .stick.can { cursor: pointer; }
+  .stick.can .face { box-shadow: 0 0 0 3px var(--gold), 0 3px 8px rgba(0,0,0,.25); }
+  .stick.can .hint { opacity: 1; }
+  .stick:not(.can) { cursor: default; }
+  .sticks.with-hints { margin-bottom: 24px; }
+  .home { display: flex; gap: 4px; align-items: center; min-width: 64px; justify-content: flex-end; flex-wrap: wrap; }
+  .home .pc { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--ink-3); }
+  .home .pc.done { opacity: .35; }
+  .side.p0 .home .pc { background: var(--cheong); } .side.p1 .home .pc { background: var(--hong); }
+  .home.can { cursor: pointer; padding: 4px 6px; border-radius: 8px; box-shadow: 0 0 0 2px var(--gold); }
+  .home .cnt { font-size: 11px; color: var(--ink-3); width: 100%; text-align: right; }
+
+  .board-wrap { margin: 4px 0; }
+  svg.board { width: 100%; height: auto; display: block; touch-action: manipulation; }
+  .node { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
+  .node.big { stroke-width: 1.6; }
+  .lines { stroke: var(--line); stroke-width: 1; fill: none; }
+  .target { fill: var(--gold); opacity: .0; cursor: pointer; transition: opacity .2s; }
+  .target.on { opacity: .28; }
+  .target.on.cap { fill: var(--hong); opacity: .35; }
+  .piece { transition: transform .5s cubic-bezier(.4,0,.2,1); cursor: default; }
+  .piece circle.body { stroke: var(--paper); stroke-width: 1.2; }
+  .piece.p0 circle.body { fill: var(--cheong); } .piece.p1 circle.body { fill: var(--hong); }
+  .piece text { font-family: "Gowun Batang", serif; font-size: 5px; fill: #fff; text-anchor: middle; dominant-baseline: central; font-weight: 700; pointer-events: none; }
+  .piece.can { cursor: pointer; }
+  .piece.can circle.ring { stroke: var(--gold); stroke-width: 1.4; fill: none; animation: pulse 1.1s ease-in-out infinite; }
+  .piece:not(.can) circle.ring { display: none; }
+  .piece.hidden { display: none; }
+  @keyframes pulse { 0%,100% { r: 4.6; opacity: 1 } 50% { r: 6; opacity: .4 } }
+  .startlabel { font-family: "Gowun Batang", serif; font-size: 3.8px; fill: var(--ink-2); text-anchor: middle; }
+
+  .log { margin-top: 12px; font-size: 12.5px; color: var(--ink-2); max-height: 84px; overflow: auto; padding: 0 4px; line-height: 1.6; }
+  .log b { color: var(--ink); }
+
+  .result { text-align: center; padding: 40px 0 20px; }
+  .result h2 { font-size: 40px; margin: 0; }
+  .result .sub { color: var(--ink-2); margin-top: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 26px 0; }
+  .stat { background: var(--paper-2); border-radius: 10px; padding: 12px 6px; }
+  .stat b { display: block; font-family: "Gowun Batang", serif; font-size: 26px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--ink-3); }
+
+  .modal { position: fixed; inset: 0; background: rgba(20,18,15,.55); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+  .modal[hidden] { display: none; }
+  .sheet { background: var(--paper); color: var(--ink); width: 100%; max-width: 520px; max-height: 88vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 20px 22px 30px; box-shadow: var(--shadow); }
+  .sheet h3 { margin: 0 0 10px; font-size: 22px; }
+  .sheet p, .sheet li { color: var(--ink-2); font-size: 14px; }
+  .sheet ol { padding-left: 20px; }
+  .sheet .close { float: right; }
+  .ladder { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 4px; font-family: "Gowun Batang", serif; font-size: 20px; }
+  .ladder span { text-align: center; }
+  .ladder small { display: block; font-size: 11px; color: var(--ink-3); font-family: "Gowun Dodum", sans-serif; }
+  .ladder .arr { color: var(--ink-3); font-size: 14px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; }
+  .toast.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .stick .face, .piece { transition: none; } .piece.can circle.ring { animation: none; } }
+
+  .room { text-align: center; padding: 20px 0; }
+  .room .code { font-family: "Gowun Batang", serif; font-size: 44px; letter-spacing: .3em; font-weight: 700; margin: 6px 0 2px; padding-left: .3em; }
+  .room .sub { color: var(--ink-2); font-size: 14px; }
+  .players { display: grid; gap: 8px; margin: 22px 0; }
+  .player { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--paper-2); text-align: left; }
+  .player .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-3); }
+  .player.p0 .dot { background: var(--cheong); } .player.p1 .dot { background: var(--hong); }
+  .player .me { font-size: 11px; color: var(--ink-3); margin-left: auto; }
+  .player.empty { color: var(--ink-3); border: 1.5px dashed var(--line); background: transparent; }
+  .pie { display: grid; gap: 8px; padding: 12px 14px; border-radius: 10px; background: var(--paper-2); margin-bottom: 10px; border: 1.5px solid var(--gold); }
+  .pie p { margin: 0; font-size: 14px; }
+  .pie .row2 button { padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; }
+  .pie .row2 button.pick { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .conn { font-size: 11px; color: var(--ink-3); letter-spacing: .08em; }
+  .conn.off { color: var(--hong); }
+  .field .row2 button { padding: 12px; border-radius: 8px; border: 1px solid var(--line); background: transparent; }
+  .share { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+</style>
+</head><body><div class="app">
+  <section class="screen" id="lobby">
+    <div class="lobby-head">
+      <div class="eyebrow">던지지 않는 윷놀이</div>
+      <h1>윷두기</h1>
+      <p>가락을 뒤집어 수를 읽는다. 운은 없고, 수읽기만 있다.</p>
+    </div>
+    <div class="mode-list" role="group" aria-label="대전 방식">
+      <button class="mode" data-mode="online" aria-pressed="true"><span class="glyph"><svg viewBox="0 0 40 24" width="40" height="24" aria-hidden="true"><circle cx="9" cy="12" r="7" fill="var(--cheong)"/><circle cx="31" cy="12" r="7" fill="var(--hong)"/><path d="M16 12h8M21 9l3 3-3 3" stroke="var(--ink-3)" stroke-width="1.6" fill="none"/></svg></span><span><b>멀리서 두기</b><span>방을 만들고 코드를 보내면 상대가 들어온다</span></span></button>
+      <button class="mode" data-mode="ai" aria-pressed="false"><span class="glyph"><svg viewBox="0 0 40 24" width="40" height="24" aria-hidden="true"><circle cx="11" cy="12" r="8" fill="var(--cheong)"/><rect x="21" y="4" width="16" height="16" rx="3" fill="var(--ink-3)"/><circle cx="26" cy="11" r="1.6" fill="var(--paper)"/><circle cx="32" cy="11" r="1.6" fill="var(--paper)"/></svg></span><span><b>혼자 두기</b><span>컴퓨터와 겨룬다 · 실력 선택</span></span></button>
+      <button class="mode" data-mode="hotseat" aria-pressed="false"><span class="glyph"><svg viewBox="0 0 40 24" width="40" height="24" aria-hidden="true"><circle cx="11" cy="12" r="8" fill="var(--cheong)"/><circle cx="29" cy="12" r="8" fill="var(--hong)"/></svg></span><span><b>둘이 두기</b><span>한 기기로 번갈아 둔다 (마주 앉아서)</span></span></button>
+    </div>
+
+    <div id="onlineOpts">
+      <div class="field"><label for="nick">내 이름</label><input id="nick" placeholder="예: 라파엘" maxlength="8"></div>
+      <div class="field"><label>방</label>
+        <div class="row2"><button id="mkRoom">방 만들기</button><button id="joinRoomBtn">코드로 들어가기</button></div>
+      </div>
+      <div class="field" id="joinField" hidden><label for="codeIn">방 코드 4자리</label><input id="codeIn" placeholder="예: K7PM" maxlength="4" autocapitalize="characters" style="letter-spacing:.3em;font-size:20px;text-align:center"></div>
+    </div>
+
+    <div id="localOpts">
+      <div class="row2">
+        <div class="field"><label for="n0">청 이름 · 먼저 두는 편</label><input id="n0" value="청" maxlength="8"></div>
+        <div class="field"><label for="n1">홍 이름 · 나중 두는 편</label><input id="n1" value="홍" maxlength="8"></div>
+      </div>
+      <div id="aiOpts">
+        <div class="field"><label>내 편</label>
+          <div class="seg" id="sideSeg"><button aria-pressed="true" data-v="0">청 · 먼저 둔다</button><button aria-pressed="false" data-v="1">홍 · 나중 둔다</button></div>
+        </div>
+        <div class="field"><label>컴퓨터 실력</label>
+          <div class="seg" id="lvSeg"><button aria-pressed="false" data-v="1">초심자</button><button aria-pressed="true" data-v="4">보통</button><button aria-pressed="false" data-v="7">고수</button></div>
+        </div>
+      </div>
+    </div>
+    <div id="ruleOpts">
+      <div class="field"><label>완주 규칙</label>
+        <div class="seg" id="finSeg"><button aria-pressed="true" data-v="0">출발점에 닿으면 완주</button><button aria-pressed="false" data-v="1">출발점을 지나야 완주</button></div>
+      </div>
+      <div class="field"><label>공평 규칙 (셋째 수 뒤 편 고르기)</label>
+        <div class="seg" id="pieSeg"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">나중 편이 셋째 수 보고 편을 고른다</button></div>
+      </div>
+    </div>
+    <button class="primary" id="startBtn">판 벌이기</button>
+    <div class="lobby-foot"><button class="ghost" data-open="rules">놀이법</button><button class="ghost" data-open="about">이 판에 대하여</button></div>
+  </section>
+
+  <section class="screen" id="room" hidden>
+    <div class="room">
+      <div class="eyebrow">방 코드</div>
+      <div class="code" id="roomCode">----</div>
+      <div class="sub">상대에게 이 코드를 보내거나 링크를 공유하세요.</div>
+      <div class="share"><button class="ghost" id="copyLink">링크 복사</button><button class="ghost" id="shareLink">공유</button></div>
+      <div class="players" id="players"></div>
+      <div class="conn" id="conn">연결 중…</div>
+      <div id="hostPanel" hidden>
+        <div class="field"><label>완주 규칙</label>
+          <div class="seg" id="finSeg2"><button aria-pressed="true" data-v="0">닿으면 완주</button><button aria-pressed="false" data-v="1">지나야 완주</button></div>
+        </div>
+        <div class="field"><label>공평 규칙</label>
+          <div class="seg" id="pieSeg2"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">셋째 수 뒤 편 고르기</button></div>
+        </div>
+        <button class="primary" id="roomStart" disabled>상대를 기다리는 중…</button>
+      </div>
+      <p class="sub" id="guestNote" hidden>방장이 판을 벌이면 시작됩니다.</p>
+      <div class="lobby-foot"><button class="ghost" id="leaveRoom">나가기</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="game" hidden>
+    <div class="topbar">
+      <h2>윷두기</h2>
+      <div class="tools"><button class="ghost" id="hintBtn">훈수</button><button class="ghost" data-open="rules">놀이법</button><button class="ghost" id="quitBtn">그만</button></div>
+    </div>
+    <div class="status"><div><div class="who" id="stWho"></div><div class="msg" id="stMsg"></div></div><div class="big" id="stBig"></div></div>
+    <div class="pie" id="piePanel" hidden>
+      <p id="pieMsg"></p>
+      <div class="row2"><button id="pieKeep">그대로 둔다</button><button id="pieSwap" class="pick">편을 바꾼다</button></div>
+    </div>
+
+    <div class="side p1" id="side1">
+      <div class="name"><span class="dot"></span><span id="name1"></span><span class="tag">나중</span></div>
+      <div class="sticks" id="sticks1"></div>
+      <div class="home" id="home1"></div>
+    </div>
+
+    <div class="board-wrap"><svg class="board" id="board" viewBox="0 0 100 104" aria-label="윷판"></svg></div>
+
+    <div class="side p0" id="side0">
+      <div class="name"><span class="dot"></span><span id="name0"></span><span class="tag">먼저</span></div>
+      <div class="sticks" id="sticks0"></div>
+      <div class="home" id="home0"></div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="conn" id="connGame" style="margin-top:8px;text-align:center"></div>
+  </section>
+
+  <section class="screen" id="result" hidden>
+    <div class="result">
+      <div class="eyebrow">판 끝</div>
+      <h2 id="resTitle"></h2>
+      <div class="sub" id="resSub"></div>
+      <div class="stats"><div class="stat"><b id="rsPly"></b><span>총 수</span></div><div class="stat"><b id="rsCap"></b><span>잡기</span></div><div class="stat"><b id="rsStack"></b><span>둑(업기)</span></div></div>
+      <button class="primary" id="againBtn">한 판 더 — 먼저·나중 바꿔서</button>
+      <p class="sub" id="againNote" hidden>방장이 한 판 더를 누르면 시작됩니다.</p>
+      <div class="lobby-foot"><button class="ghost" id="toLobby">처음으로</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="mRules" hidden><div class="sheet">
+  <button class="ghost close" data-close>닫기</button>
+  <h3>윷두기 놀이법</h3>
+  <p>윷을 던지지 않는다. 각자 손에 윷 두 가락을 들고, 네 가락을 <b>합쳐서</b> 읽는다.</p>
+  <div class="ladder"><span>모<small>0개</small></span><span class="arr">↔</span><span>도<small>1개</small></span><span class="arr">↔</span><span>개<small>2개</small></span><span class="arr">↔</span><span>걸<small>3개</small></span><span class="arr">↔</span><span>윷<small>4개</small></span></div>
+  <p style="text-align:center;font-size:12px">배(평평한 면)가 위로 온 가락의 수 → 결과. 한 수마다 결과는 사다리에서 <b>한 칸씩만</b> 움직인다.</p>
+  <ol>
+    <li>내 차례에 <b>내 가락 중 하나</b>를 반드시 뒤집는다. 안 뒤집거나 둘 다 뒤집을 수 없다.</li>
+    <li>뒤집은 뒤 네 가락을 합쳐 읽은 결과만큼 말을 옮긴다. 도 1 · 개 2 · 걸 3 · 윷 4 · 모 5.</li>
+    <li>상대 말이 있는 칸에 서면 잡는다(상대 말은 집으로). 내 말이 있는 칸에 서면 업어서(둑) 함께 다닌다.</li>
+    <li>잡아도, 윷이나 모가 나도 <b>한 번 더는 없다.</b> 차례는 그대로 넘어간다.</li>
+    <li>모서리나 가운데에 <b>정확히 서면</b> 다음 수부터 지름길로 간다. 지나치면 바깥길.</li>
+    <li>말 네 동을 모두 내보내면 이긴다. 같은 국면이 세 번 되풀이되면 무승부.</li>
+  </ol>
+  <p>첫 수는 누구나 도, 둘째 수는 개로 정해져 있다. 셋째 수부터가 진짜 시작이다.</p>
+  <p><b>공평 규칙</b>을 켜면, 먼저 두는 사람이 셋째 수(첫 진짜 선택)를 둔 뒤 나중 사람이 어느 편을 가질지 고른다. 유리한 수를 두면 빼앗기고 불리한 수를 두면 남으니, 두는 사람이 스스로 균형을 찾게 된다.</p>
+</div></div>
+
+<div class="modal" id="mAbout" hidden><div class="sheet">
+  <button class="ghost close" data-close>닫기</button>
+  <h3>이 판에 대하여</h3>
+  <p>윷두기는 윷놀이의 운을 걷어내고 수읽기만 남긴 변형 놀이다. 네 가락의 상태가 모두 보이므로 바둑·장기처럼 <b>완전정보 게임</b>이 된다.</p>
+  <p>멀리 있는 사람과 두려면 방을 만들어 코드를 보내면 된다. 한 기기에서 둘이 두거나 컴퓨터와 둘 수도 있다. '훈수'를 누르면 컴퓨터가 권하는 수를 보여준다.</p>
+  <p style="font-size:12px">청·홍 말, 한지와 뇌록 바탕, 윷가락의 배와 등 — 색은 전통 놀이의 것을 빌렸다.</p>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.YUT = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  const F = 99;
+  const START = 30;
+  const ROUTES = {
+    OUTER: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, START, F],
+    FROM5: [5, 20, 21, 22, 23, 24, 15, 16, 17, 18, 19, START, F],
+    FROM10: [10, 25, 26, 22, 27, 28, START, F],
+    FROM22: [22, 27, 28, START, F],
+  };
+  const BRANCH = { 5: 'FROM5', 10: 'FROM10', 22: 'FROM22' };
+  const RESULT = ['모', '도', '개', '걸', '윷'];
+  const STEPS = [5, 1, 2, 3, 4];
+
+  function newGame(opts) {
+    opts = opts || {};
+    const g0 = {
+      sticks: [[false, false], [false, false]],
+      pieces: [0, 1].map(() => [0, 1, 2, 3].map(() => ({ route: 'OUTER', idx: 0, done: false }))),
+      turn: 0,
+      ply: 0,
+      result: null,
+      pending: null,
+      winner: null,
+      seen: {},
+      history: [],
+      exactFinish: !!opts.exactFinish,
+      komi: opts.komi || 'none',
+      passes: [0, opts.komi === 'pass' ? 1 : 0],
+      names: opts.names || ['선', '후'],
+    };
+    if (opts.komi === 'head') g0.pieces[1][0] = { route: 'OUTER', idx: 1, done: false };
+    if (opts.komi === 'three') g0.pieces[1][3] = { route: 'OUTER', idx: 0, done: true };
+    return g0;
+  }
+
+  function clone(g) { return JSON.parse(JSON.stringify(g)); }
+
+  function countUp(sticks) {
+    return sticks[0].filter(Boolean).length + sticks[1].filter(Boolean).length;
+  }
+
+  function nodeOf(pc) { return pc.done ? F : ROUTES[pc.route][pc.idx]; }
+
+  function flipOptions(g, p) {
+    p = p == null ? g.turn : p;
+    const base = countUp(g.sticks);
+    const out = [];
+    for (let s = 0; s < 2; s++) {
+      const r = base + (g.sticks[p][s] ? -1 : 1);
+      if (!out.some(o => o.result === r)) out.push({ stick: s, result: r });
+    }
+    if (g.passes && g.passes[p] > 0) out.push({ stick: -1, result: base, pass: true });
+    return out;
+  }
+
+  function moveOptions(g, p, result) {
+    p = p == null ? g.turn : p;
+    result = result == null ? g.result : result;
+    if (result == null) return [];
+    const steps = STEPS[result];
+    const mine = g.pieces[p];
+    const groups = new Map();
+    mine.forEach((pc, i) => {
+      if (pc.done) return;
+      const n = nodeOf(pc);
+      if (!groups.has(n)) groups.set(n, []);
+      else if (n === 0) return;
+      groups.get(n).push(i);
+    });
+    const opts = [];
+    groups.forEach((ids, from) => {
+      const lead = mine[ids[0]];
+      const route = ROUTES[lead.route];
+      const ni = lead.idx + steps;
+      let to, newRoute = lead.route, newIdx = ni;
+      if (ni >= route.length - 1) { to = F; }
+      else {
+        to = route[ni];
+        if (to === START && !g.exactFinish) to = F;
+        else if (BRANCH[to]) { newRoute = BRANCH[to]; newIdx = 0; }
+      }
+      const captures = [], stacks = [];
+      if (to !== F) {
+        g.pieces[1 - p].forEach((pc, i) => { if (!pc.done && nodeOf(pc) === to) captures.push(i); });
+        mine.forEach((pc, i) => { if (!pc.done && nodeOf(pc) === to && !ids.includes(i)) stacks.push(i); });
+      }
+      opts.push({ from, ids, to, route: newRoute, idx: newIdx, captures, stacks });
+    });
+    return opts;
+  }
+
+  function flip(g, stick) {
+    if (g.winner != null) throw new Error('game over');
+    if (g.pending) throw new Error('이미 뒤집었습니다. 말을 옮기세요.');
+    const p = g.turn;
+    const n = clone(g);
+    if (stick === -1) {
+      if (!(n.passes && n.passes[p] > 0)) throw new Error('덤이 없습니다');
+      n.passes[p] -= 1;
+    } else n.sticks[p][stick] = !n.sticks[p][stick];
+    n.result = countUp(n.sticks);
+    n.pending = { stick };
+    return n;
+  }
+
+  function move(g, from) {
+    if (!g.pending) throw new Error('먼저 가락을 뒤집으세요.');
+    const p = g.turn;
+    const opts = moveOptions(g, p, g.result);
+    const opt = typeof from === 'object' ? opts.find(o => o.from === from.from) : opts.find(o => o.from === from);
+    if (!opt) throw new Error('잘못된 이동');
+    const n = clone(g);
+    const mine = n.pieces[p];
+    const movers = opt.ids.concat(opt.stacks);
+    movers.forEach(i => {
+      if (opt.to === F) { mine[i].done = true; mine[i].route = 'OUTER'; mine[i].idx = 0; }
+      else { mine[i].done = false; mine[i].route = opt.route; mine[i].idx = opt.idx; }
+    });
+    opt.captures.forEach(i => { n.pieces[1 - p][i] = { route: 'OUTER', idx: 0, done: false }; });
+    n.history.push({ p, stick: g.pending.stick, result: g.result, from: opt.from, to: opt.to, captured: opt.captures.length, stacked: opt.stacks.length });
+    if (mine.every(pc => pc.done)) n.winner = p;
+    n.turn = 1 - p;
+    if (n.winner == null) {
+      const key = posKey(n);
+      n.seen[key] = (n.seen[key] || 0) + 1;
+      if (n.seen[key] >= 3) n.winner = -1;
+    }
+    n.ply += 1;
+    n.result = null;
+    n.pending = null;
+    return n;
+  }
+
+  function posKey(g) {
+    return g.turn + '|' + (g.passes ? g.passes.join('') : '') + '|' + g.sticks.map(s => s.map(b => b ? 1 : 0).join('')).join('/') + '|' +
+      g.pieces.map(ps => ps.map(pc => pc.done ? 'F' : pc.route[0] + pc.route[4] + pc.idx).sort().join(',')).join('/');
+  }
+
+  function play(g, stick, from) { return move(flip(g, stick), from); }
+
+  function legalMoves(g) {
+    if (g.winner != null) return [];
+    const out = [];
+    flipOptions(g).forEach(f => {
+      moveOptions(g, g.turn, f.result).forEach(m => out.push(Object.assign({ stick: f.stick, result: f.result }, m)));
+    });
+    return out;
+  }
+
+  function remaining(pc) {
+    if (pc.done) return 0;
+    return ROUTES[pc.route].length - 1 - pc.idx;
+  }
+  function evaluate(g, p) {
+    if (g.winner != null) return g.winner === p ? 10000 : -10000;
+    let s = 0;
+    for (let q = 0; q < 2; q++) {
+      const sign = q === p ? 1 : -1;
+      g.pieces[q].forEach(pc => {
+        if (pc.done) s += sign * 40;
+        else if (pc.idx > 0 || pc.route !== 'OUTER') s += sign * (25 - remaining(pc));
+      });
+    }
+    return s;
+  }
+
+  function search(g, depth, alpha, beta, me) {
+    if (depth === 0 || g.winner != null) return evaluate(g, me);
+    const moves = legalMoves(g);
+    const maximizing = g.turn === me;
+    let best = maximizing ? -Infinity : Infinity;
+    for (const m of moves) {
+      const n = play(g, m.stick, m.from);
+      const v = search(n, depth - 1, alpha, beta, me);
+      if (maximizing) { if (v > best) best = v; if (best > alpha) alpha = best; }
+      else { if (v < best) best = v; if (best < beta) beta = best; }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  function valueOf(g, depth, side) {
+    g = Object.assign({}, g, { history: [], seen: {} });
+    return search(g, depth || 4, -Infinity, Infinity, side);
+  }
+
+  function bestMove(g, depth) {
+    depth = depth || 4;
+    g = Object.assign({}, g, { history: [], seen: {} });
+    const me = g.turn;
+    const moves = legalMoves(g);
+    let best = null, bestV = -Infinity;
+    moves.sort((a, b) => (b.captures.length * 10 + (b.to === F ? 5 : 0)) - (a.captures.length * 10 + (a.to === F ? 5 : 0)));
+    for (const m of moves) {
+      const v = search(play(g, m.stick, m.from), depth - 1, -Infinity, Infinity, me);
+      if (v > bestV) { bestV = v; best = m; }
+    }
+    return best;
+  }
+
+  return { F, START, posKey, ROUTES, BRANCH, RESULT, STEPS, newGame, clone, countUp, nodeOf, flipOptions, moveOptions, flip, move, play, legalMoves, evaluate, bestMove, valueOf, remaining };
+});
+</script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const Y = window.YUT;
+  const SUPA_URL = 'https://ncmwbkzyyiedxiykisvh.supabase.co', SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jbXdia3p5eWllZHhpeWtpc3ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MTMyNjMsImV4cCI6MjEwNDE4OTI2M30.Zvuo5LwlHl0-jZPZGlHlxiqRfhU5efTGr1dg_PwKNNQ';
+
+  const P = {};
+  for (let k = 0; k <= 5; k++) P[k] = [90, 90 - 16 * k];
+  for (let k = 1; k <= 5; k++) P[5 + k] = [90 - 16 * k, 10];
+  for (let k = 1; k <= 5; k++) P[10 + k] = [10, 10 + 16 * k];
+  for (let k = 1; k <= 4; k++) P[15 + k] = [10 + 16 * k, 90];
+  P[22] = [50, 50];
+  P[20] = [76.67, 23.33]; P[21] = [63.33, 36.67]; P[23] = [36.67, 63.33]; P[24] = [23.33, 76.67];
+  P[25] = [23.33, 23.33]; P[26] = [36.67, 36.67]; P[27] = [63.33, 63.33]; P[28] = [76.67, 76.67];
+  P[30] = [90, 90];
+  const BIG = new Set([0, 5, 10, 15, 22, 30]);
+
+  const S = {
+    mode: 'online', human: 0, depth: 4, exact: false, pie: false,
+    names: ['청', '홍'], g: null, busy: false, stats: { cap: 0, stack: 0 },
+    pieState: null,
+    net: null, myId: null, room: null, isHost: false, peers: [], sides: null,
+  };
+  let timers = [];
+  function later(fn, ms) { const t = setTimeout(fn, ms); timers.push(t); return t; }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
   document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
   function setMode(m) {
