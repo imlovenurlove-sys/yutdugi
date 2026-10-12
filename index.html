@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5"><meta property="og:title" content="윷두기"><meta property="og:description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta property="og:image" content="https://imlovenurlove-sys.github.io/yutdugi/icon-512.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="윷두기"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>[hidden]{display:none!important} img{max-width:100%}</style><title>윷두기</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5"><meta property="og:title" content="윷두기"><meta property="og:description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta property="og:url" content="https://imlovenurlove-sys.github.io/yutdugi/"><meta property="og:type" content="website"><meta property="og:image" content="https://imlovenurlove-sys.github.io/yutdugi/og-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="윷두기"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>[hidden]{display:none!important} img{max-width:100%}</style><title>윷두기</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
 <style>
   :root {
@@ -101,6 +101,32 @@
   .conn.off { color: var(--hong); }
 
   /* ---------- 대국 ---------- */
+  /* 대국 화면은 휴대폰 한 화면 안에: 판이 남는 높이만큼 줄어든다 */
+  .play { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 24px); height: calc(100dvh - 24px); min-height: 500px; max-height: 980px; }
+  .play > * { flex: 0 0 auto; }
+  .play .board-wrap { flex: 1 1 0; min-height: 0; margin: 0 !important; display: flex; }
+  .play .board-wrap svg.board { width: 100%; height: 100%; }
+  .play .status { margin: 0; }
+  .play .pie { margin: 0; }
+  body.in-game .app { padding-bottom: 10px; }
+  .brand { display: grid; gap: 2px; }
+  .brand .conn { font-size: 11px; letter-spacing: .02em; }
+  .stick.banned { opacity: .55; cursor: not-allowed; }
+  .stick.banned .hint { opacity: 1; background: #D9CDB8; color: #6B6B6B; text-decoration: line-through; }
+  .invite { display: grid; gap: 2px; text-align: center; background: var(--hwang-zone); border: 2px solid var(--hwang); border-radius: 18px; padding: 12px 14px; margin-top: 14px; }
+  .invite b { font-family: "Jua", sans-serif; font-weight: 400; font-size: 20px; }
+  .invite span { font-size: 14px; color: var(--ink-2); }
+  @media (max-height: 700px) {
+    .play { gap: 8px; }
+    .topbar h2 { font-size: 24px; }
+    .side { padding: 8px 12px; }
+    .sticks { gap: 6px; }
+    .stick { max-width: 170px; }
+    .status { min-height: 58px; padding: 6px 14px; }
+    .status .big { font-size: 40px; }
+    .status .msg { font-size: 14px; }
+    .play .board-wrap { padding: 8px; }
+  }
   .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
   .topbar h2 { font-size: 28px; margin: 0; color: var(--hong); letter-spacing: .02em; line-height: 1; }
   .topbar .tools { display: flex; gap: 6px; }
@@ -234,7 +260,9 @@
     </div>
 
     <div id="onlineOpts">
+      <div class="invite" id="invite" hidden><b>방 <span id="inviteCode"></span>에 초대받았어요</b><span>이름을 적고 들어가기를 눌러요.</span></div>
       <div class="field"><label for="nick">내 이름</label><input id="nick" placeholder="예: 라파엘" maxlength="8"></div>
+      <button class="primary" id="joinInvite" hidden>들어가기</button>
       <button class="primary" id="mkRoom">방 만들기</button>
       <div class="foot"><button class="ghost" id="joinRoomBtn">코드로 들어가기</button></div>
       <div class="field" id="joinField" hidden><label for="codeIn">방 코드 4자리</label><input id="codeIn" placeholder="예: K7PM" maxlength="4" autocapitalize="characters" style="letter-spacing:.3em;font-size:22px;text-align:center;font-family:'Jua',sans-serif"></div>
@@ -255,9 +283,6 @@
       </div>
     </div>
     <div id="ruleOpts">
-      <div class="field"><label>말 수</label>
-        <div class="seg" id="pcSeg"><button aria-pressed="false" data-v="3">3동 · 짧게</button><button aria-pressed="true" data-v="4">4동 · 제대로</button></div>
-      </div>
       <div class="field"><label>공평 규칙 (셋째 수 뒤 편 고르기)</label>
         <div class="seg" id="pieSeg"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">셋째 수 뒤 편 고르기</button></div>
       </div>
@@ -276,9 +301,6 @@
       <div class="players" id="players"></div>
       <div class="conn" id="conn">연결 중…</div>
       <div id="hostPanel" hidden>
-        <div class="field"><label>말 수</label>
-          <div class="seg" id="pcSeg2"><button aria-pressed="false" data-v="3">3동 · 짧게</button><button aria-pressed="true" data-v="4">4동 · 제대로</button></div>
-        </div>
         <div class="field"><label>공평 규칙</label>
           <div class="seg" id="pieSeg2"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">셋째 수 뒤 편 고르기</button></div>
         </div>
@@ -291,8 +313,9 @@
 
   <!-- 게임 -->
   <section class="screen" id="game" hidden>
+   <div class="play">
     <div class="topbar">
-      <h2>윷두기</h2>
+      <div class="brand"><h2>윷두기</h2><div class="conn" id="connGame"></div></div>
       <div class="tools"><button class="ghost" id="hintBtn">훈수</button><button class="ghost" data-open="rules">놀이법</button><button class="ghost" id="quitBtn">그만</button></div>
     </div>
 
@@ -315,8 +338,8 @@
       <div class="sticks" id="sticks0"></div>
       <div class="home" id="home0"><div class="dots"></div><span class="cnt"></span></div>
     </div>
+   </div>
     <div class="log" id="log"></div>
-    <div class="conn" id="connGame" style="margin-top:8px;text-align:center"></div>
   </section>
 
   <!-- 결과 -->
@@ -352,7 +375,8 @@
     <li>상대 말이 있는 칸에 서면 잡아요(상대 말은 집으로). 내 말이 있는 칸에 서면 업어서 함께 다녀요.</li>
     <li>잡아도, 윷이나 모가 나도 <b>한 번 더는 없어요.</b> 차례는 그대로 넘어가요.</li>
     <li>모서리나 가운데에 <b>정확히 서면</b> 다음 수부터 지름길로 가요. 지나치면 바깥길.</li>
-    <li>출발점에 정확히 서면 아직 완주가 아니에요. 출발점을 <b>지나야</b> 완주. 말(3동 또는 4동)을 모두 내보내면 이겨요. 같은 국면이 세 번 되풀이되면 무승부.</li>
+    <li>출발점에 정확히 서면 아직 완주가 아니에요. 출발점을 <b>지나야</b> 완주. 말 네 동을 모두 내보내면 이겨요.</li>
+    <li><b>반복 금지</b> — 같은 판(말 자리·가락·차례가 모두 같은 상태)을 <b>세 번째로 만드는 수는 둘 수 없어요.</b> 바둑의 패와 같은 원리예요. 둘 수 있는 수가 그런 수뿐일 때만 무승부가 돼요.</li>
   </ol>
   <p>첫 수는 누구나 도, 둘째 수는 개로 정해져 있어요. 셋째 수부터가 진짜 시작이에요.</p>
   <p><b>공평 규칙</b>을 켜면, 먼저 두는 사람이 셋째 수(첫 진짜 선택)를 둔 뒤 나중 사람이 어느 편을 가질지 골라요. 유리한 수를 두면 빼앗기고 불리한 수를 두면 남으니, 두는 사람이 스스로 균형을 찾게 돼요.</p>
@@ -414,7 +438,7 @@
       names: opts.names || ['선', '후'],
     };
     if (opts.komi === 'head') g0.pieces[1][0] = { route: 'OUTER', idx: 1, done: false };
-    if (opts.komi === 'three') g0.pieces[1][3] = { route: 'OUTER', idx: 0, done: true };
+    if (opts.komi === 'three') g0.pieces[1][np - 1] = { route: 'OUTER', idx: 0, done: true };
     return g0;
   }
 
@@ -492,13 +516,9 @@
     return n;
   }
 
-  // 2단계: 말 옮기기 (opt = moveOptions의 원소, 또는 from 노드)
-  function move(g, from) {
-    if (!g.pending) throw new Error('먼저 가락을 뒤집으세요.');
+  // 2단계 내부: 반복 금지 검사 없이 말을 옮긴 결과
+  function applyMove(g, opt) {
     const p = g.turn;
-    const opts = moveOptions(g, p, g.result);
-    const opt = typeof from === 'object' ? opts.find(o => o.from === from.from) : opts.find(o => o.from === from);
-    if (!opt) throw new Error('잘못된 이동');
     const n = clone(g);
     const mine = n.pieces[p];
     const movers = opt.ids.concat(opt.stacks);
@@ -513,7 +533,7 @@
     if (n.winner == null) {
       const key = posKey(n);
       n.seen[key] = (n.seen[key] || 0) + 1;
-      if (n.seen[key] >= 3) n.winner = -1;
+      if (n.seen[key] >= 3) n.winner = -1; // 같은 판이 세 번째 — 반복 금지 규칙에선 '다른 수가 없을 때'만 일어난다
     }
     n.ply += 1;
     n.result = null;
@@ -521,23 +541,73 @@
     return n;
   }
 
+  // 반복 금지(바둑의 패처럼): 같은 판(차례·가락·말 자리)을 세 번째로 만드는 수는 둘 수 없다.
+  // 단, 이번 차례에 둘 수 있는 수가 모두 그런 수뿐이면 막지 않는다 → 그 수를 두면 무승부.
+  // turnMoves(g): 뒤집기 전 상태에서 이번 차례의 모든 (가락, 말) 조합 — {stick, result, from, to, ..., next, banned, ok}
+  function turnMoves(g) {
+    if (g.winner != null || g.pending) return [];
+    const p = g.turn, out = [], keys = {};
+    const sticks = [0, 1].concat(g.passes && g.passes[p] > 0 ? [-1] : []);
+    sticks.forEach(st => {
+      const gf = flip(g, st);
+      moveOptions(gf).forEach(o => {
+        const next = applyMove(gf, o);
+        const k = posKey(next) + '#' + o.from; // 같은 결과를 내는 두 가락은 하나로
+        if (keys[k]) return; keys[k] = 1;
+        out.push(Object.assign({ stick: st, result: gf.result }, o, { next, banned: next.winner === -1 }));
+      });
+    });
+    const anyOk = out.some(m => !m.banned);
+    out.forEach(m => { m.ok = anyOk ? !m.banned : true; });
+    return out;
+  }
+
+  // 뒤집은 뒤(pending) 상태에서 고를 수 있는 말 이동: moveOptions + {banned, ok}
+  function moveChoices(g) {
+    if (!g.pending) return [];
+    const unflipped = Object.assign({}, g, { sticks: g.sticks.map(a => a.slice()), pending: null, result: null });
+    if (g.pending.stick >= 0) unflipped.sticks[g.turn][g.pending.stick] = !unflipped.sticks[g.turn][g.pending.stick];
+    else unflipped.passes = g.passes.map((v, i) => i === g.turn ? v + 1 : v);
+    const turnOk = turnMoves(unflipped).some(m => !m.banned);
+    return moveOptions(g).map(o => {
+      const next = applyMove(g, o);
+      const banned = next.winner === -1;
+      return Object.assign({}, o, { next, banned, ok: turnOk ? !banned : true });
+    });
+  }
+
+  // 가락별로 뒤집을 수 있는지: [{stick, result, ok}] — ok=false면 그 가락을 뒤집으면 둘 수 있는 수가 없다(반복 금지)
+  function stickChoices(g, p) {
+    p = p == null ? g.turn : p;
+    const base = countUp(g.sticks);
+    const tm = p === g.turn ? turnMoves(g) : [];
+    return [0, 1].map(s => {
+      const result = base + (g.sticks[p][s] ? -1 : 1);
+      const ok = p === g.turn ? tm.some(m => m.ok && (m.stick === s || (m.result === result && m.stick !== -1))) : false;
+      return { stick: s, result, ok };
+    });
+  }
+
+  // 2단계: 말 옮기기 (from 노드 또는 moveOptions 원소)
+  function move(g, from) {
+    if (!g.pending) throw new Error('먼저 가락을 뒤집으세요.');
+    const f = typeof from === 'object' ? from.from : from;
+    const opt = moveChoices(g).find(o => o.from === f);
+    if (!opt) throw new Error('잘못된 이동');
+    if (!opt.ok) throw new Error('같은 판을 세 번째로 만드는 수는 둘 수 없습니다.');
+    return opt.next;
+  }
+
   function posKey(g) {
-    return g.turn + '|' + (g.passes ? g.passes.join('') : '') + '|' + g.sticks.map(s => s.map(b => b ? 1 : 0).join('')).join('/') + '|' +
+    return g.turn + '|' + (g.passes ? g.passes.join('') : '') + '|' + g.sticks.map(s => s.filter(Boolean).length).join('/') + '|' +
       g.pieces.map(ps => ps.map(pc => pc.done ? 'F' : pc.route[0] + pc.route[4] + pc.idx).sort().join(',')).join('/');
   }
 
   // 한 수 전체 (뒤집기+이동)
   function play(g, stick, from) { return move(flip(g, stick), from); }
 
-  // 이 턴에 가능한 전체 수: [{stick, result, from, to, captures, stacks}]
-  function legalMoves(g) {
-    if (g.winner != null) return [];
-    const out = [];
-    flipOptions(g).forEach(f => {
-      moveOptions(g, g.turn, f.result).forEach(m => out.push(Object.assign({ stick: f.stick, result: f.result }, m)));
-    });
-    return out;
-  }
+  // 이 턴에 둘 수 있는 전체 수(반복 금지 반영): [{stick, result, from, to, captures, stacks, next}]
+  function legalMoves(g) { return turnMoves(g).filter(m => m.ok); }
 
   // ---------- 평가/AI ----------
   // 진척도: 말이 완주에 얼마나 가까운지(남은 칸 수 기준)
@@ -546,7 +616,7 @@
     return ROUTES[pc.route].length - 1 - pc.idx;
   }
   function evaluate(g, p) {
-    if (g.winner != null) return g.winner === p ? 10000 : -10000;
+    if (g.winner != null) return g.winner === -1 ? 0 : (g.winner === p ? 10000 : -10000);
     let s = 0;
     for (let q = 0; q < 2; q++) {
       const sign = q === p ? 1 : -1;
@@ -564,8 +634,7 @@
     const maximizing = g.turn === me;
     let best = maximizing ? -Infinity : Infinity;
     for (const m of moves) {
-      const n = play(g, m.stick, m.from);
-      const v = search(n, depth - 1, alpha, beta, me);
+      const v = search(m.next, depth - 1, alpha, beta, me);
       if (maximizing) { if (v > best) best = v; if (best > alpha) alpha = best; }
       else { if (v < best) best = v; if (best < beta) beta = best; }
       if (beta <= alpha) break;
@@ -575,26 +644,27 @@
 
   // 국면 가치(탐색 포함): side 입장에서의 점수
   function valueOf(g, depth, side) {
-    g = Object.assign({}, g, { history: [], seen: {} });
+    g = Object.assign({}, g, { history: [] });
     return search(g, depth || 4, -Infinity, Infinity, side);
   }
 
   function bestMove(g, depth) {
     depth = depth || 4;
-    g = Object.assign({}, g, { history: [], seen: {} });
+    g = Object.assign({}, g, { history: [] });
     const me = g.turn;
     const moves = legalMoves(g);
     let best = null, bestV = -Infinity;
     // 잡기·완주 등 확실히 좋은 수를 먼저 보면 가지치기가 잘 됨
     moves.sort((a, b) => (b.captures.length * 10 + (b.to === F ? 5 : 0)) - (a.captures.length * 10 + (a.to === F ? 5 : 0)));
     for (const m of moves) {
-      const v = search(play(g, m.stick, m.from), depth - 1, -Infinity, Infinity, me);
+      const v = search(m.next, depth - 1, -Infinity, Infinity, me);
       if (v > bestV) { bestV = v; best = m; }
     }
+    if (best) delete best.next;
     return best;
   }
 
-  return { F, START, posKey, ROUTES, BRANCH, RESULT, STEPS, newGame, clone, countUp, nodeOf, flipOptions, moveOptions, flip, move, play, legalMoves, evaluate, bestMove, valueOf, remaining };
+  return { F, START, posKey, ROUTES, BRANCH, RESULT, STEPS, newGame, clone, countUp, nodeOf, flipOptions, moveOptions, moveChoices, stickChoices, turnMoves, flip, move, play, legalMoves, evaluate, bestMove, valueOf, remaining };
 });
 </script>
 <script>
@@ -618,7 +688,7 @@
   // ---------- 상태 ----------
   const S = {
     mode: 'online', human: 0, depth: 4, exact: true, pie: false, pieces: 4,
-    names: ['청', '홍'], g: null, busy: false, stats: { cap: 0, stack: 0 },
+    names: ['청', '홍'], g: null, busy: false, stats: { cap: 0, stack: 0 }, oppAway: false, invite: null,
     pieState: null, // null | 'ask' | 'done'
     // 온라인
     net: null, myId: null, room: null, isHost: false, peers: [], sides: null, // sides: {peerId: 0|1}
@@ -650,8 +720,6 @@
   seg('#lvSeg', v => S.depth = v);
   seg('#pieSeg', v => S.pie = !!v);
   seg('#pieSeg2', v => S.pie = !!v);
-  seg('#pcSeg', v => S.pieces = v);
-  seg('#pcSeg2', v => S.pieces = v);
   $('#startBtn').addEventListener('click', () => startLocal(false));
   $('#againBtn').addEventListener('click', () => { if (S.mode === 'online') { if (S.isHost) hostStart(true); } else startLocal(true); });
   $('#toLobby').addEventListener('click', () => { leaveNet(); show('lobby'); });
@@ -681,7 +749,7 @@
   $('#lobbyPair').innerHTML = stickSVG(true) + stickSVG(false);
   $('#resPair').innerHTML = stickSVG(true) + stickSVG(false);
 
-  function show(id) { ['lobby', 'room', 'game', 'result'].forEach(s => $('#' + s).hidden = s !== id); }
+  function show(id) { ['lobby', 'room', 'game', 'result'].forEach(s => $('#' + s).hidden = s !== id); document.body.classList.toggle('in-game', id === 'game'); window.scrollTo(0, 0); }
   function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); later(() => el.classList.remove('on'), 2000); }
 
   // ---------- 판 그리기(1회) ----------
@@ -716,8 +784,7 @@
   }
   function beginGame(names, cfg) {
     S.names = names;
-    S.exact = true; S.pie = !!cfg.pie; S.pieces = cfg.pieces === 3 ? 3 : 4;
-    setSeg('#pcSeg', S.pieces); setSeg('#pcSeg2', S.pieces);
+    S.exact = true; S.pie = !!cfg.pie; S.pieces = 4; // 말은 언제나 네 동 (3동 선택은 출시판에서 뺐다)
     S.g = Y.newGame({ exactFinish: S.exact, names, pieces: S.pieces });
     S.stats = { cap: 0, stack: 0 };
     S.busy = false; S.pieState = S.pie ? 'wait' : null;
@@ -758,16 +825,18 @@
     const flipped = !!g.pending;
     const paused = S.pieState === 'ask';
     for (let p = 0; p < 2; p++) {
-      const fo = (!flipped && p === cur && g.winner == null) ? Y.flipOptions(g, p) : [];
       const canP = p === cur && !flipped && controls(p) && !S.busy && !paused && g.winner == null;
+      const sc = canP ? Y.stickChoices(g, p) : null;
       $('#sticks' + p).classList.toggle('with-hints', canP);
       $('#sticks' + p).querySelectorAll('.stick').forEach(b => {
         const s = +b.dataset.s;
         b.classList.toggle('up', g.sticks[p][s]); b.classList.toggle('down', !g.sticks[p][s]);
-        const o = fo.find(x => x.stick === s);
-        b.classList.toggle('can', canP);
-        b.querySelector('.hint').textContent = canP ? '→ ' + Y.RESULT[Y.countUp(g.sticks) + (g.sticks[p][s] ? -1 : 1)] : '';
-        b.disabled = !canP;
+        const ok = canP && sc[s].ok;
+        b.classList.toggle('can', ok);
+        b.classList.toggle('banned', canP && !ok);
+        b.querySelector('.hint').textContent = canP ? '→ ' + Y.RESULT[sc[s].result] : '';
+        b.title = canP && !ok ? '이 가락을 뒤집으면 같은 판이 세 번째가 돼요 (반복 금지)' : '';
+        b.disabled = !ok;
       });
       $('#side' + p).classList.toggle('active', p === cur && g.winner == null);
       const home = $('#home' + p);
@@ -777,6 +846,7 @@
       home.querySelector('.cnt').textContent = `집 ${atHome} · 난 말 ${done}`;
     }
     const groups = {};
+    for (let p = 0; p < 2; p++) for (let i = g.pieces[p].length; i < 4; i++) $('#pc' + p + i).classList.add('hidden'); // 3동 판: 4번째 말 자리는 비운다
     for (let p = 0; p < 2; p++) g.pieces[p].forEach((pc, i) => {
       const el = $('#pc' + p + i);
       const n = Y.nodeOf(pc);
@@ -796,8 +866,9 @@
     });
     document.querySelectorAll('.target').forEach(t => { t.classList.remove('on', 'cap'); });
     $('#home0').classList.remove('can'); $('#home1').classList.remove('can');
+    const choices = flipped && g.winner == null ? Y.moveChoices(g) : [];
     if (flipped && controls(cur) && !S.busy && g.winner == null) {
-      const opts = Y.moveOptions(g);
+      const opts = choices.filter(o => o.ok);
       opts.forEach(o => {
         if (o.from === 0) $('#home' + cur).classList.add('can');
         else { const grp = groups[cur + ':' + o.from]; if (grp) $('#pc' + cur + grp[0]).classList.add('can'); }
@@ -809,24 +880,27 @@
     // 상태줄
     const who = $('#stWho'), msg = $('#stMsg'), big = $('#stBig');
     const KSTEP = ['', '한 칸', '두 칸', '세 칸', '네 칸', '다섯 칸'];
-    if (g.winner != null) { who.textContent = '판 끝'; msg.textContent = g.winner === -1 ? '같은 국면이 세 번 — 무승부' : `${S.names[g.winner]} 승!`; big.innerHTML = g.winner === -1 ? '반' : '끝'; return; }
+    if (g.winner != null) { who.textContent = '판 끝'; msg.textContent = g.winner === -1 ? '둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부' : `${S.names[g.winner]} 승!`; big.innerHTML = g.winner === -1 ? '반' : '끝'; return; }
     who.textContent = `${S.names[cur]}의 차례 · ${g.ply + 1}수`;
     if (paused) {
       msg.textContent = controls(1) ? '셋째 수를 보고 편을 골라요.' : `${S.names[1]}이(가) 편을 고르는 중…`;
       big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
     } else if (!flipped) {
-      const fo = Y.flipOptions(g);
+      const sc = Y.stickChoices(g);
+      const fo = sc.filter(x => x.ok).filter((x, i, a) => a.findIndex(y => y.result === x.result) === i);
+      const blocked = sc.some(x => !x.ok);
       if (isAI(cur)) msg.textContent = '컴퓨터가 수를 읽는 중…';
       else if (!controls(cur)) msg.textContent = `${S.names[cur]}이(가) 가락을 고르는 중…`;
       else if (g.ply === 0) msg.textContent = '첫 수는 도예요. 가락 하나를 톡 눌러 뒤집어요.';
       else if (g.ply === 1) msg.textContent = '둘째 수는 개예요. 가락 하나를 톡 눌러 뒤집어요.';
-      else if (fo.length === 1) msg.textContent = `어느 가락을 뒤집어도 ${Y.RESULT[fo[0].result]}. 가락을 눌러요.`;
+      else if (fo.length === 1) msg.textContent = blocked ? `${Y.RESULT[fo[0].result]}만 둘 수 있어요 — 다른 쪽은 같은 판이 세 번째가 돼요(반복 금지).` : `어느 가락을 뒤집어도 ${Y.RESULT[fo[0].result]}. 가락을 눌러요.`;
       else msg.textContent = `${Y.RESULT[fo[0].result]} 또는 ${Y.RESULT[fo[1].result]} — 가락을 골라 뒤집어요.`;
       big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
     } else {
-      msg.textContent = controls(cur) ? `${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.` : `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]}이(가) 말을 옮겨요.`;
+      msg.textContent = controls(cur) ? `${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.` + (choices.some(o => !o.ok) ? ' (막힌 말은 반복 금지)' : '') : `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]}이(가) 말을 옮겨요.`;
       big.innerHTML = `${Y.RESULT[g.result]}!<small>${Y.STEPS[g.result]}칸</small>`;
     }
+    if (S.mode === 'online' && S.oppAway && g.winner == null) msg.textContent = '상대 연결이 끊겼어요. 돌아오면 이어서 둬요.';
     $('#hintBtn').hidden = S.mode === 'online';
   }
 
@@ -840,31 +914,35 @@
     S.g = Y.flip(S.g, s);
     if (!remote) send('flip', { ply: S.g.ply, stick: s });
     render();
-    const opts = Y.moveOptions(S.g);
+    const opts = Y.moveChoices(S.g).filter(o => o.ok);
     if (!remote && opts.length === 1) { S.busy = true; later(() => { S.busy = false; doMove(opts[0].from, false); }, 650); }
   }
   function onPiece(el) {
     const g = S.g; if (!g.pending || S.busy || !controls(g.turn)) return;
     if (+el.dataset.p !== g.turn) return;
     const from = Y.nodeOf(g.pieces[g.turn][+el.dataset.i]);
-    if (Y.moveOptions(g).some(o => o.from === from)) doMove(from, false);
+    const c = Y.moveChoices(g).find(o => o.from === from);
+    if (c && c.ok) doMove(from, false);
+    else if (c) toast('그 말을 옮기면 같은 판이 세 번째가 돼요 (반복 금지)');
   }
   function onTarget(node) {
     const g = S.g; if (!g.pending || S.busy || !controls(g.turn)) return;
-    const o = Y.moveOptions(g).find(o => o.to === node);
+    const o = Y.moveChoices(g).find(o => o.ok && o.to === node);
     if (o) doMove(o.from, false);
   }
   for (let p = 0; p < 2; p++) $('#home' + p).addEventListener('click', () => {
     const g = S.g; if (!g || !g.pending || S.busy || p !== g.turn || !controls(p)) return;
-    if (Y.moveOptions(g).some(o => o.from === 0)) doMove(0, false);
+    const c = Y.moveChoices(g).find(o => o.from === 0);
+    if (c && c.ok) doMove(0, false);
+    else if (c) toast('새 말을 내면 같은 판이 세 번째가 돼요 (반복 금지)');
   });
 
   function doMove(from, remote) {
     const g = S.g;
-    const opt = Y.moveOptions(g).find(o => o.from === from);
-    if (!opt) return;
-    S.g = Y.move(g, from);
-    if (!remote) send('move', { ply: S.g.ply, from });
+    const opt = Y.moveChoices(g).find(o => o.from === from);
+    if (!opt || !opt.ok) { if (remote) requestSync(); return; }
+    S.g = opt.next;
+    if (!remote) send('move', { ply: S.g.ply, node: from });
     if (opt.captures.length) S.stats.cap++;
     if (opt.stacks.length) S.stats.stack++;
     addLog(g.turn, g.result, opt);
@@ -926,9 +1004,9 @@
   function hint() {
     const g = S.g; if (!g || g.winner != null || !controls(g.turn) || S.busy || S.pieState === 'ask') return;
     if (g.pending) {
-      const opts = Y.moveOptions(g);
+      const opts = Y.moveChoices(g).filter(o => o.ok);
       let best = null, bv = -Infinity;
-      opts.forEach(o => { const v = Y.evaluate(Y.move(g, o.from), g.turn); if (v > bv) { bv = v; best = o; } });
+      opts.forEach(o => { const v = Y.evaluate(o.next, g.turn); if (v > bv) { bv = v; best = o; } });
       toast(`훈수: ${best.from === 0 ? '새 말을 내보내요' : best.from + '칸의 말을 옮겨요'}`);
     } else {
       const m = Y.bestMove(g, Math.max(S.depth, 4));
@@ -941,7 +1019,7 @@
   function showResult() {
     const g = S.g;
     $('#resTitle').className = g.winner === -1 ? 'draw' : 'p' + g.winner;
-    if (g.winner === -1) { $('#resTitle').textContent = '무승부'; $('#resSub').textContent = '같은 국면이 세 번 되풀이됐어요.'; }
+    if (g.winner === -1) { $('#resTitle').textContent = '무승부'; $('#resSub').textContent = '둘 수 있는 수가 모두 같은 판을 세 번째로 만들었어요.'; }
     else {
       const mine = S.mode === 'online' ? (controls(g.winner) ? ' 내가 이겼어요!' : (S.sides && S.sides[S.myId] != null ? ' 다음 판엔 꼭…' : '')) : '';
       $('#resTitle').textContent = `${S.names[g.winner]} 승!`; $('#resSub').textContent = `${S.names[g.winner]}이(가) ${g.npieces === 3 ? '세' : '네'} 동을 모두 내보냈어요.` + mine;
@@ -958,11 +1036,17 @@
   function myName() { const n = ($('#nick').value || '').trim(); if (n) store.set('nick', n); return n || '손님'; }
   function send(type, payload) {
     if (S.mode !== 'online' || !S.net) return;
-    S.net.send({ type: 'broadcast', event: type, payload: Object.assign({ from: S.myId }, payload) });
+    S.net.send({ type: 'broadcast', event: type, payload: Object.assign({}, payload, { from: S.myId }) });
   }
   function setConn(t, off) { ['#conn', '#connGame'].forEach(id => { const el = $(id); el.textContent = t; el.classList.toggle('off', !!off); }); }
 
   $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.'); enterRoom(makeCode(), true); });
+  $('#joinInvite').addEventListener('click', () => {
+    if (!($('#nick').value || '').trim()) { $('#nick').focus(); return toast('이름을 먼저 적어 주세요'); }
+    const code = S.invite; S.invite = null;
+    $('#invite').hidden = true; $('#joinInvite').hidden = true; $('#mkRoom').hidden = false; $('#joinRoomBtn').parentElement.hidden = false; document.querySelector('.mode-list').hidden = false;
+    enterRoom(code, false);
+  });
   $('#joinRoomBtn').addEventListener('click', () => { $('#joinField').hidden = false; $('#codeIn').focus(); });
   $('#codeIn').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); e.target.value = v; if (v.length === 4) enterRoom(v, false); });
   $('#leaveRoom').addEventListener('click', () => { leaveNet(); show('lobby'); });
@@ -974,12 +1058,41 @@
   });
   function roomLink() { const u = new URL(location.href); u.search = '?room=' + S.room; return u.toString(); }
 
-  let client = null;
+  let client = null, watchdog = null, awayTimer = null;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // 방에 '나 여기 있어요'를 알린다. 실패하면 몇 번 다시 시도하고, 끝내 안 되면 솔직하게 알린다
+  async function ensureTracked(ch) {
+    if (ch._tracking) return; ch._tracking = true;
+    try {
+      for (let i = 0; i < 5 && S.net === ch; i++) {
+        let r = 'error';
+        try { r = await ch.track({ name: myName(), ts: S.joinTs }); } catch (e) {}
+        if (r === 'ok') { setConn('연결됨'); return; }
+        setConn('연결 중…'); await sleep(1500 * (i + 1));
+      }
+      if (S.net === ch) setConn('연결이 불안정해요 — 새로고침해 주세요', true);
+    } finally { ch._tracking = false; }
+  }
+  // 상대가 자리에 있는지 살핀다 (새로고침처럼 잠깐 나갔다 오는 건 4초 기다려 준다)
+  function checkAway() {
+    if (S.mode !== 'online' || !S.net || !S.g || !S.sides || S.g.winner != null) { S.oppAway = false; return; }
+    const here = new Set(Object.keys(S.net.presenceState()));
+    const gone = Object.keys(S.sides).some(id => id !== S.myId && !here.has(id));
+    if (gone && !S.oppAway && !awayTimer) awayTimer = setTimeout(() => { awayTimer = null; checkAway2(); }, 4000);
+    if (!gone) { clearTimeout(awayTimer); awayTimer = null; if (S.oppAway) { S.oppAway = false; toast('상대가 돌아왔어요'); render(); } }
+  }
+  function checkAway2() {
+    if (!S.net || !S.sides || !S.g || S.g.winner != null) return;
+    const here = new Set(Object.keys(S.net.presenceState()));
+    if (Object.keys(S.sides).some(id => id !== S.myId && !here.has(id))) { S.oppAway = true; toast('상대 연결이 끊겼어요'); render(); }
+  }
   function enterRoom(code, host) {
     if (!window.supabase) return toast('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.');
     if (!client) client = supabase.createClient(SUPA_URL, SUPA_KEY, { realtime: { params: { eventsPerSecond: 20 } } });
     leaveNet();
     S.mode = 'online'; S.room = code; S.isHost = host; S.myId = tabStore.get('pid') || (Math.random().toString(36).slice(2, 10)); tabStore.set('pid', S.myId);
+    S.joinTs = +tabStore.get('ts:' + code) || Date.now(); tabStore.set('ts:' + code, S.joinTs); // 새로고침해도 들어온 순서(방장)를 지킨다
+    S.oppAway = false;
     S.sides = null; S.peers = [];
     $('#roomCode').textContent = code; $('#players').innerHTML = ''; $('#hostPanel').hidden = !host; $('#guestNote').hidden = host;
     setConn('연결 중…');
@@ -993,29 +1106,56 @@
       // 방장: 가장 먼저 들어온 사람 (방장이 나가면 승계)
       S.isHost = peers.length > 0 && peers[0].id === S.myId;
       renderRoom();
+      checkAway();
       if (S.g && S.sides) render();
     });
-    ch.on('broadcast', { event: 'start' }, ({ payload }) => onStart(payload));
-    ch.on('broadcast', { event: 'flip' }, ({ payload }) => { if (!S.g || S.g.pending || payload.ply !== S.g.ply) return requestSync(); doFlip(payload.stick, true); });
-    ch.on('broadcast', { event: 'move' }, ({ payload }) => { if (!S.g || !S.g.pending || payload.ply !== S.g.ply + 1) return requestSync(); doMove(payload.from, true); });
-    ch.on('broadcast', { event: 'pie' }, ({ payload }) => pieDecide(!!payload.swap, true));
+    ch.on('broadcast', { event: 'start' }, ({ payload }) => { if (S.peers.length && payload.from !== S.peers[0].id) return; onStart(payload); });
+    ch.on('broadcast', { event: 'flip' }, ({ payload }) => {
+      if (!S.g || !actsFor(payload.from, S.g.turn)) return;
+      if (S.g.pending || payload.ply !== S.g.ply) return requestSync();
+      try { doFlip(payload.stick, true); } catch (e) { requestSync(); }
+    });
+    ch.on('broadcast', { event: 'move' }, ({ payload }) => {
+      if (!S.g || !actsFor(payload.from, S.g.turn)) return;
+      if (!S.g.pending || payload.ply !== S.g.ply + 1) return requestSync();
+      doMove(payload.node, true);
+    });
+    ch.on('broadcast', { event: 'pie' }, ({ payload }) => { if (S.pieState === 'ask' && actsFor(payload.from, 1)) pieDecide(!!payload.swap, true); });
     ch.on('broadcast', { event: 'hello' }, ({ payload }) => { if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie, pieces: S.pieces }, pieState: S.pieState, stats: S.stats }); });
     ch.on('broadcast', { event: 'state' }, ({ payload }) => {
-      if (S.g && S.g.ply >= payload.g.ply && $('#game').hidden === false) return;
-      S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = payload.cfg.pieces === 3 ? 3 : 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
+      if (!acceptState(payload)) return;
+      S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
       S.g = payload.g; $('#name0').textContent = S.names[0]; $('#name1').textContent = S.names[1];
       $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => n === 0 ? '집' : n === Y.F ? '완주' : n === 22 ? '가운데' : n === Y.START ? '출발점' : n + '칸'; line.innerHTML = (i + 1) + '. <b>' + S.names[h.p] + '</b> ' + Y.RESULT[h.result] + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? ' · 잡음' : '') + (h.stacked ? ' · 업음' : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
       if (S.pieState === 'ask') pieAsk();
       if (S.g.winner != null) showResult();
     });
+    clearInterval(watchdog);
+    watchdog = setInterval(() => {
+      if (S.net !== ch) return clearInterval(watchdog);
+      if (!(S.myId in ch.presenceState())) ensureTracked(ch);
+      checkAway();
+    }, 6000);
     ch.subscribe(async status => {
-      if (status === 'SUBSCRIBED') { setConn('연결됨'); await ch.track({ name: myName(), ts: Date.now() }); send('hello', {}); }
+      if (status === 'SUBSCRIBED') { setConn('연결 중…'); await ensureTracked(ch); send('hello', {}); }
       else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setConn('연결이 끊겼어요 — 다시 시도 중', true);
       else if (status === 'CLOSED') setConn('연결 종료', true);
     });
   }
   function requestSync() { send('hello', {}); }
-  function leaveNet() { if (S.net) { try { S.net.untrack(); client.removeChannel(S.net); } catch (e) {} S.net = null; } }
+  // 이 사람이 side편의 수를 둘 자격이 있나: 대국 때 정해진 편과 일치해야 하고, 나를 사칭한 신호는 버린다
+  function actsFor(from, side) { return !!from && from !== S.myId && !!S.sides && S.sides[from] === side; }
+  // 받은 판 상태를 믿어도 되나: 대국 중인 사람은 '내 기록을 그대로 잇고, 상대 수만 덧붙인' 상태만 받는다
+  function acceptState(pl) {
+    if (!pl || !pl.g || !pl.sides) return false;
+    if (!S.g || $('#game').hidden || !S.sides || S.sides[S.myId] == null) return true; // 새로 들어왔거나 새로고침했거나 구경꾼
+    if (S.g.ply >= pl.g.ply) return false;
+    const mine = S.sides[S.myId], a = S.g.history, b = pl.g.history || [];
+    for (let i = 0; i < a.length; i++) if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) return false;
+    for (let i = a.length; i < b.length; i++) if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
+    return true;
+  }
+  function leaveNet() { clearInterval(watchdog); clearTimeout(awayTimer); awayTimer = null; S.oppAway = false; if (S.net) { try { S.net.untrack(); client.removeChannel(S.net); } catch (e) {} S.net = null; } if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
   function renderRoom() {
     const box = $('#players');
     const rows = S.peers.slice(0, 2).map((p, i) => `<div class="player p${i}"><span class="dot"></span><span>${esc(p.name)}</span><span class="me">${p.id === S.myId ? '나' : ''}${i === 0 ? ' · 방장' : ''}</span></div>`);
@@ -1045,11 +1185,19 @@
 
   // ---------- 시작 ----------
   buildBoard();
-  if (SUPA_URL) { try { fetch(SUPA_URL + '/rest/v1/', { headers: { apikey: SUPA_KEY } }).catch(() => {}); } catch (e) {} }
+  if (SUPA_URL) { try { fetch(SUPA_URL + '/rest/v1/rpc/ping', { method: 'POST', headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {}); } catch (e) {} }
   const saved = store.get('nick'); if (saved) $('#nick').value = saved;
   const qs = new URLSearchParams(location.search);
   const rq = (qs.get('room') || '').toUpperCase();
-  if (rq && /^[A-Z0-9]{4}$/.test(rq)) { setMode('online'); if (!$('#nick').value) { const n = prompt('내 이름을 적어주세요'); if (n) $('#nick').value = n.slice(0, 8); } enterRoom(rq, false); }
+  if (rq && /^[A-Z0-9]{4}$/.test(rq) && SUPA_URL) {
+    setMode('online');
+    if ($('#nick').value) enterRoom(rq, false);
+    else {
+      S.invite = rq; $('#inviteCode').textContent = rq; $('#invite').hidden = false; $('#joinInvite').hidden = false;
+      $('#mkRoom').hidden = true; $('#joinRoomBtn').parentElement.hidden = true; document.querySelector('.mode-list').hidden = true;
+      $('#nick').focus();
+    }
+  }
   else if (!SUPA_URL) { document.querySelector('.mode[data-mode="online"]').hidden = true; setMode('ai'); }
   else setMode('online');
 })();
