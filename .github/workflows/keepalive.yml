@@ -1,0 +1,36 @@
+# 윷두기 서버 깨우기 — 무료 Supabase는 7일간 아무 요청이 없으면 잠든다.
+# 1) 사흘마다 서버의 ping 함수를 한 번 부른다.
+# 2) 한 달에 한 번 이 저장소에 작은 기록을 남긴다(공개 저장소는 60일간 변화가 없으면 예약 작업이 꺼지기 때문).
+name: 서버 깨우기
+on:
+  schedule:
+    - cron: '17 3 */3 * *'   # 사흘마다 (한국 시각 12:17)
+    - cron: '0 4 1 * *'      # 매달 1일 (한국 시각 13:00)
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 서버 ping
+        run: |
+          PAGE=$(curl -fsSL https://imlovenurlove-sys.github.io/yutdugi/)
+          URL=$(printf '%s' "$PAGE" | grep -o "SUPA_URL = '[^']*'" | head -1 | cut -d"'" -f2)
+          KEY=$(printf '%s' "$PAGE" | grep -o "SUPA_KEY = '[^']*'" | head -1 | cut -d"'" -f2)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL/rest/v1/rpc/ping" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "ping 응답: $CODE"
+          test "$CODE" = "200"
+  stay-active:
+    if: github.event.schedule == '0 4 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 한 달 기록 남기기
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive.txt
+          git config user.name "yutdugi-bot"
+          git config user.email "yutdugi-bot@users.noreply.github.com"
+          git add .github/keepalive.txt
+          git commit -m "서버 깨우기: 월간 기록" || exit 0
+          git push
