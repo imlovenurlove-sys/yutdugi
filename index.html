@@ -688,7 +688,7 @@
   // ---------- 상태 ----------
   const S = {
     mode: 'online', human: 0, depth: 4, exact: true, pie: false, pieces: 4,
-    names: ['청', '홍'], g: null, busy: false, stats: { cap: 0, stack: 0 }, oppAway: false, invite: null,
+    names: ['청', '홍'], g: null, busy: false, stats: { cap: 0, stack: 0 }, oppAway: false, invite: null, roster: {}, connected: false,
     pieState: null, // null | 'ask' | 'done'
     // 온라인
     net: null, myId: null, room: null, isHost: false, peers: [], sides: null, // sides: {peerId: 0|1}
@@ -722,8 +722,8 @@
   seg('#pieSeg2', v => S.pie = !!v);
   $('#startBtn').addEventListener('click', () => startLocal(false));
   $('#againBtn').addEventListener('click', () => { if (S.mode === 'online') { if (S.isHost) hostStart(true); } else startLocal(true); });
-  $('#toLobby').addEventListener('click', () => { leaveNet(); show('lobby'); });
-  $('#quitBtn').addEventListener('click', () => { if (confirm('판을 접을까요?')) { clearTimers(); leaveNet(); show('lobby'); } });
+  $('#toLobby').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); });
+  $('#quitBtn').addEventListener('click', () => { if (confirm('판을 접을까요?')) { clearTimers(); leaveNet(); forgetRoom(); show('lobby'); } });
   document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => { $('#m' + (b.dataset.open === 'rules' ? 'Rules' : 'About')).hidden = false; }));
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal').hidden = true));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.hidden = true; }));
@@ -1049,7 +1049,7 @@
   });
   $('#joinRoomBtn').addEventListener('click', () => { $('#joinField').hidden = false; $('#codeIn').focus(); });
   $('#codeIn').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); e.target.value = v; if (v.length === 4) enterRoom(v, false); });
-  $('#leaveRoom').addEventListener('click', () => { leaveNet(); show('lobby'); });
+  $('#leaveRoom').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); });
   $('#roomStart').addEventListener('click', () => hostStart(false));
   $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(roomLink()); toast('링크를 복사했어요'); } catch (e) { toast(roomLink()); } });
   $('#shareLink').addEventListener('click', async () => {
@@ -1058,33 +1058,31 @@
   });
   function roomLink() { const u = new URL(location.href); u.search = '?room=' + S.room; return u.toString(); }
 
-  let client = null, watchdog = null, awayTimer = null;
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-  // 방에 '나 여기 있어요'를 알린다. 실패하면 몇 번 다시 시도하고, 끝내 안 되면 솔직하게 알린다
-  async function ensureTracked(ch) {
-    if (ch._tracking) return; ch._tracking = true;
-    try {
-      for (let i = 0; i < 5 && S.net === ch; i++) {
-        let r = 'error';
-        try { r = await ch.track({ name: myName(), ts: S.joinTs }); } catch (e) {}
-        if (r === 'ok') { setConn('연결됨'); return; }
-        setConn('연결 중…'); await sleep(1500 * (i + 1));
-      }
-      if (S.net === ch) setConn('연결이 불안정해요 — 새로고침해 주세요', true);
-    } finally { ch._tracking = false; }
+  let client = null, beat = null;
+  // 방에 누가 있는지: 서버의 presence 기능 대신, 각자 2.5초마다 '여기 있어요' 신호를 보내고 9초간 소식이 없으면 나간 것으로 본다
+  const HEARTBEAT = 2500, GONE_AFTER = 9000;
+  function heard(id, name, ts) {
+    if (!id || id === S.myId) return;
+    const was = S.roster[id];
+    S.roster[id] = { id, name: String(name || '손님').slice(0, 8), ts: +ts || Date.now(), seen: Date.now() };
+    if (!was) refreshPeers();
   }
-  // 상대가 자리에 있는지 살핀다 (새로고침처럼 잠깐 나갔다 오는 건 4초 기다려 준다)
+  function refreshPeers() {
+    const now = Date.now();
+    Object.keys(S.roster).forEach(id => { if (now - S.roster[id].seen > GONE_AFTER) delete S.roster[id]; });
+    const me = { id: S.myId, name: myName(), ts: S.joinTs };
+    S.peers = [me].concat(Object.values(S.roster)).sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : 1));
+    S.isHost = S.peers[0].id === S.myId; // 방장: 가장 먼저 들어온 사람 (나가면 다음 사람이 이어받는다)
+    renderRoom();
+    checkAway();
+    if (S.g && S.sides) render();
+  }
+  // 대국 상대가 자리에 있는지
   function checkAway() {
     if (S.mode !== 'online' || !S.net || !S.g || !S.sides || S.g.winner != null) { S.oppAway = false; return; }
-    const here = new Set(Object.keys(S.net.presenceState()));
-    const gone = Object.keys(S.sides).some(id => id !== S.myId && !here.has(id));
-    if (gone && !S.oppAway && !awayTimer) awayTimer = setTimeout(() => { awayTimer = null; checkAway2(); }, 4000);
-    if (!gone) { clearTimeout(awayTimer); awayTimer = null; if (S.oppAway) { S.oppAway = false; toast('상대가 돌아왔어요'); render(); } }
-  }
-  function checkAway2() {
-    if (!S.net || !S.sides || !S.g || S.g.winner != null) return;
-    const here = new Set(Object.keys(S.net.presenceState()));
-    if (Object.keys(S.sides).some(id => id !== S.myId && !here.has(id))) { S.oppAway = true; toast('상대 연결이 끊겼어요'); render(); }
+    const gone = Object.keys(S.sides).some(id => id !== S.myId && !S.roster[id]);
+    if (gone && !S.oppAway) { S.oppAway = true; toast('상대 연결이 끊겼어요'); }
+    else if (!gone && S.oppAway) { S.oppAway = false; toast('상대가 돌아왔어요'); }
   }
   function enterRoom(code, host) {
     if (!window.supabase) return toast('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.');
@@ -1092,24 +1090,21 @@
     leaveNet();
     S.mode = 'online'; S.room = code; S.isHost = host; S.myId = tabStore.get('pid') || (Math.random().toString(36).slice(2, 10)); tabStore.set('pid', S.myId);
     S.joinTs = +tabStore.get('ts:' + code) || Date.now(); tabStore.set('ts:' + code, S.joinTs); // 새로고침해도 들어온 순서(방장)를 지킨다
-    S.oppAway = false;
+    S.oppAway = false; S.roster = {};
     S.sides = null; S.peers = [];
+    history.replaceState(null, '', location.pathname + '?room=' + code); // 새로고침하면 같은 방으로 돌아온다
     $('#roomCode').textContent = code; $('#players').innerHTML = ''; $('#hostPanel').hidden = !host; $('#guestNote').hidden = host;
     setConn('연결 중…');
     show('room');
-    const ch = client.channel('yut:' + code, { config: { presence: { key: S.myId }, broadcast: { self: false } } });
+    const ch = client.channel('yut:' + code, { config: { broadcast: { self: false } } });
     S.net = ch;
-    ch.on('presence', { event: 'sync' }, () => {
-      const st = ch.presenceState();
-      const peers = Object.keys(st).map(k => ({ id: k, name: st[k][0].name, ts: st[k][0].ts })).sort((a, b) => a.ts - b.ts);
-      S.peers = peers;
-      // 방장: 가장 먼저 들어온 사람 (방장이 나가면 승계)
-      S.isHost = peers.length > 0 && peers[0].id === S.myId;
-      renderRoom();
-      checkAway();
-      if (S.g && S.sides) render();
+    ch.on('broadcast', { event: 'here' }, ({ payload }) => heard(payload.from, payload.name, payload.ts));
+    ch.on('broadcast', { event: 'bye' }, ({ payload }) => { if (payload.from && S.roster[payload.from]) { delete S.roster[payload.from]; refreshPeers(); } });
+    ch.on('broadcast', { event: 'start' }, ({ payload }) => {
+      if (!payload.sides || payload.sides[S.myId] == null) return; // 나를 포함하지 않은 판 시작은 무시
+      if (S.roster[payload.from] && S.peers[0] && S.peers[0].id !== payload.from) return; // 방장이 아닌 사람이 보낸 시작 신호
+      onStart(payload);
     });
-    ch.on('broadcast', { event: 'start' }, ({ payload }) => { if (S.peers.length && payload.from !== S.peers[0].id) return; onStart(payload); });
     ch.on('broadcast', { event: 'flip' }, ({ payload }) => {
       if (!S.g || !actsFor(payload.from, S.g.turn)) return;
       if (S.g.pending || payload.ply !== S.g.ply) return requestSync();
@@ -1121,7 +1116,7 @@
       doMove(payload.node, true);
     });
     ch.on('broadcast', { event: 'pie' }, ({ payload }) => { if (S.pieState === 'ask' && actsFor(payload.from, 1)) pieDecide(!!payload.swap, true); });
-    ch.on('broadcast', { event: 'hello' }, ({ payload }) => { if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie, pieces: S.pieces }, pieState: S.pieState, stats: S.stats }); });
+    ch.on('broadcast', { event: 'hello' }, ({ payload }) => { heard(payload.from, payload.name, payload.ts); send('here', { name: myName(), ts: S.joinTs }); if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie, pieces: S.pieces }, pieState: S.pieState, stats: S.stats }); });
     ch.on('broadcast', { event: 'state' }, ({ payload }) => {
       if (!acceptState(payload)) return;
       S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
@@ -1130,19 +1125,20 @@
       if (S.pieState === 'ask') pieAsk();
       if (S.g.winner != null) showResult();
     });
-    clearInterval(watchdog);
-    watchdog = setInterval(() => {
-      if (S.net !== ch) return clearInterval(watchdog);
-      if (!(S.myId in ch.presenceState())) ensureTracked(ch);
-      checkAway();
-    }, 6000);
-    ch.subscribe(async status => {
-      if (status === 'SUBSCRIBED') { setConn('연결 중…'); await ensureTracked(ch); send('hello', {}); }
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setConn('연결이 끊겼어요 — 다시 시도 중', true);
-      else if (status === 'CLOSED') setConn('연결 종료', true);
+    clearInterval(beat);
+    beat = setInterval(() => {
+      if (S.net !== ch) return clearInterval(beat);
+      if (S.connected) send('here', { name: myName(), ts: S.joinTs });
+      refreshPeers();
+    }, HEARTBEAT);
+    refreshPeers();
+    ch.subscribe(status => {
+      if (status === 'SUBSCRIBED') { S.connected = true; setConn('연결됨'); send('hello', { name: myName(), ts: S.joinTs }); }
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { S.connected = false; setConn('연결이 끊겼어요 — 다시 시도 중', true); }
+      else if (status === 'CLOSED') { S.connected = false; setConn('연결 종료', true); }
     });
   }
-  function requestSync() { send('hello', {}); }
+  function requestSync() { send('hello', { name: myName(), ts: S.joinTs }); }
   // 이 사람이 side편의 수를 둘 자격이 있나: 대국 때 정해진 편과 일치해야 하고, 나를 사칭한 신호는 버린다
   function actsFor(from, side) { return !!from && from !== S.myId && !!S.sides && S.sides[from] === side; }
   // 받은 판 상태를 믿어도 되나: 대국 중인 사람은 '내 기록을 그대로 잇고, 상대 수만 덧붙인' 상태만 받는다
@@ -1155,7 +1151,8 @@
     for (let i = a.length; i < b.length; i++) if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
     return true;
   }
-  function leaveNet() { clearInterval(watchdog); clearTimeout(awayTimer); awayTimer = null; S.oppAway = false; if (S.net) { try { S.net.untrack(); client.removeChannel(S.net); } catch (e) {} S.net = null; } if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
+  function leaveNet() { clearInterval(beat); S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
+  function forgetRoom() { if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
   function renderRoom() {
     const box = $('#players');
     const rows = S.peers.slice(0, 2).map((p, i) => `<div class="player p${i}"><span class="dot"></span><span>${esc(p.name)}</span><span class="me">${p.id === S.myId ? '나' : ''}${i === 0 ? ' · 방장' : ''}</span></div>`);
@@ -1182,6 +1179,8 @@
     S.sides = p.sides; lastFirst = Object.keys(p.sides).find(k => p.sides[k] === 0);
     beginGame(p.names, p.cfg);
   }
+
+  window.addEventListener('pagehide', () => { if (S.net) try { send('bye', {}); } catch (e) {} });
 
   // ---------- 시작 ----------
   buildBoard();
