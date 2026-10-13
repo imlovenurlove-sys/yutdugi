@@ -1252,6 +1252,12 @@
   let client = null, beat = null;
   // 방에 누가 있는지: 서버의 presence 기능 대신, 각자 2.5초마다 '여기 있어요' 신호를 보내고 9초간 소식이 없으면 나간 것으로 본다
   const HEARTBEAT = 2500, GONE_AFTER = 9000;
+  // 신호 시계: 화면이 가려진 탭에서도 느려지지 않도록 가능하면 작업 스레드(Worker)의 시계를 쓴다
+  function ticker(fn, ms) {
+    try { const w = new Worker(URL.createObjectURL(new Blob([`setInterval(function(){postMessage(0)},${ms})`], { type: 'text/javascript' }))); w.onmessage = () => fn(); return { stop: () => w.terminate() }; }
+    catch (e) { const id = setInterval(fn, ms); return { stop: () => clearInterval(id) }; }
+  }
+  function touch(id) { if (id && S.roster[id]) { S.roster[id].seen = Date.now(); if (S.oppAway) checkAway(); } }
   function heard(id, name, ts) {
     if (!id || id === S.myId) return;
     const was = S.roster[id];
@@ -1298,11 +1304,13 @@
       onStart(payload);
     });
     ch.on('broadcast', { event: 'flip' }, ({ payload }) => {
+      touch(payload.from);
       if (!S.g || !actsFor(payload.from, S.g.turn)) return;
       if (S.g.pending || payload.ply !== S.g.ply) return requestSync();
       try { doFlip(payload.stick, true); } catch (e) { requestSync(); }
     });
     ch.on('broadcast', { event: 'move' }, ({ payload }) => {
+      touch(payload.from);
       if (!S.g || !actsFor(payload.from, S.g.turn)) return;
       if (!S.g.pending || payload.ply !== S.g.ply + 1) return requestSync();
       doMove(payload.node, true);
@@ -1317,9 +1325,9 @@
       if (S.pieState === 'ask') pieAsk();
       if (S.g.winner != null) showResult();
     });
-    clearInterval(beat);
-    beat = setInterval(() => {
-      if (S.net !== ch) return clearInterval(beat);
+    if (beat) beat.stop();
+    beat = ticker(() => {
+      if (S.net !== ch) { if (beat) beat.stop(); return; }
       if (S.connected) send('here', { name: myName(), ts: S.joinTs });
       refreshPeers();
     }, HEARTBEAT);
@@ -1343,7 +1351,7 @@
     for (let i = a.length; i < b.length; i++) if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
     return true;
   }
-  function leaveNet() { clearInterval(beat); clearTimeout(S.emptyT); $('#emptyNote').hidden = true; S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
+  function leaveNet() { if (beat) beat.stop(); beat = null; clearTimeout(S.emptyT); $('#emptyNote').hidden = true; S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
   function forgetRoom() { if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
   function renderRoom() {
     const box = $('#players');
