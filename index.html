@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5"><meta property="og:title" content="윷두기"><meta property="og:description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta property="og:url" content="https://imlovenurlove-sys.github.io/yutdugi/"><meta property="og:type" content="website"><meta property="og:image" content="https://imlovenurlove-sys.github.io/yutdugi/og-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="윷두기"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>[hidden]{display:none!important} img{max-width:100%}</style><title>윷두기</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5"><meta property="og:title" content="윷두기 Yutdugi"><meta property="og:description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. The Korean stick game you win by thinking."><meta property="og:url" content="https://imlovenurlove-sys.github.io/yutdugi/"><meta property="og:type" content="website"><meta property="og:image" content="https://imlovenurlove-sys.github.io/yutdugi/og-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="description" content="던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. 친구와 온라인으로 한 판."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="윷두기"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><style>[hidden]{display:none!important} img{max-width:100%}</style><title>윷두기</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
 <style>
   :root {
@@ -8,10 +8,10 @@
     --edge: #F2D9B8;         /* 카드 테두리·그림자 */
     --ink: #2B2B2B;
     --ink-2: #4A4A4A;
-    --ink-3: #9A9083;
-    --cheong: #2E6BE6;  --cheong-zone: #E3ECFF; --cheong-sub: #4C6FB8; --cheong-deep: #1F4FB0;
-    --hong: #E0452E;    --hong-zone: #FFE6E0;   --hong-sub: #B8624F;   --hong-deep: #B23322;
-    --hwang: #F7B500;   --hwang-zone: #FFF0C2;  --hwang-sub: #A56A00;
+    --ink-3: #6F665B;
+    --cheong: #2E6BE6;  --cheong-zone: #E3ECFF; --cheong-sub: #2F57A6; --cheong-deep: #1F4FB0;
+    --hong: #E0452E;    --hong-zone: #FFE6E0;   --hong-sub: #9E4038;   --hong-deep: #B23322;
+    --hwang: #F7B500;   --hwang-zone: #FFF0C2;  --hwang-sub: #8A5800;
     --nok: #2FA36B;
     --ja: #7B4BC9;
     --focus: #2E6BE6;
@@ -29,7 +29,8 @@
   h1, h2, h3, .jua { font-family: "Jua", "Gowun Dodum", sans-serif; font-weight: 400; text-wrap: balance; }
   button { font: inherit; color: inherit; cursor: pointer; }
   button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-  .app { max-width: 480px; margin: 0 auto; padding: 14px 16px 28px; }
+  :root { --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)); --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)); }
+  .app { max-width: 480px; margin: 0 auto; padding: calc(14px + var(--sat)) 16px calc(28px + var(--sab)); }
   .screen[hidden] { display: none !important; }
   svg.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
@@ -50,7 +51,7 @@
   .primary.blue { background: var(--cheong); box-shadow: 0 6px 0 var(--cheong-deep); }
   .primary.blue:active:not(:disabled) { box-shadow: 0 2px 0 var(--cheong-deep); }
   .primary:disabled { background: #D9CDB8; box-shadow: 0 6px 0 #C2B49B; color: #fff; cursor: default; }
-  .ghost { background: var(--card); border: 2px solid var(--edge); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--ink); }
+  .ghost { background: var(--card); border: 2px solid var(--edge); border-radius: 999px; padding: 6px 14px; min-height: 44px; min-width: 44px; font-size: 14px; color: var(--ink); }
   .ghost:active { background: var(--edge); }
   .foot { margin-top: 16px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
   .legal { margin: 10px 0 0; text-align: center; font-size: 12px; } .legal a { color: var(--ink-3); }
@@ -63,7 +64,7 @@
   .field input::placeholder { color: var(--ink-3); }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .seg { display: flex; gap: 6px; }
-  .seg button { flex: 1; padding: 9px 6px; border-radius: 999px; border: 2px solid var(--edge); background: var(--card); font-size: 14px; }
+  .seg button { flex: 1; min-height: 44px; padding: 9px 6px; border-radius: 999px; border: 2px solid var(--edge); background: var(--card); font-size: 14px; }
   .seg button[aria-pressed="true"] { background: var(--hwang); border-color: var(--hwang); color: var(--ink); font-weight: 700; }
 
   /* ---------- 로비 ---------- */
@@ -79,13 +80,13 @@
   .mode .glyph { width: 52px; height: 52px; border-radius: 16px; background: var(--card); display: flex; justify-content: center; align-items: center; }
   .mode b { display: block; font-family: "Jua", sans-serif; font-weight: 400; font-size: 21px; line-height: 1.1; }
   .mode span span { color: var(--ink-2); font-size: 13px; display: block; margin-top: 3px; }
-  .mode[data-mode="online"] { background: var(--hong-zone); } .mode[data-mode="online"] b { color: var(--hong); }
+  .mode[data-mode="online"] { background: var(--hong-zone); } .mode[data-mode="online"] b { color: #C8371F; }
   .mode[data-mode="ai"] { background: var(--hwang-zone); } .mode[data-mode="ai"] b { color: var(--hwang-sub); }
   .mode[data-mode="hotseat"] { background: var(--cheong-zone); } .mode[data-mode="hotseat"] b { color: var(--cheong); }
   .mode[data-mode="online"][aria-pressed="true"] { border-color: var(--hong); }
   .mode[data-mode="ai"][aria-pressed="true"] { border-color: var(--hwang); }
   .mode[data-mode="hotseat"][aria-pressed="true"] { border-color: var(--cheong); }
-  .mode[aria-pressed="false"] { opacity: .78; }
+  .mode[aria-pressed="false"] { opacity: .9; }
 
   /* ---------- 방 ---------- */
   .room { text-align: center; padding: 16px 0; }
@@ -103,13 +104,13 @@
 
   /* ---------- 대국 ---------- */
   /* 대국 화면은 휴대폰 한 화면 안에: 판이 남는 높이만큼 줄어든다 */
-  .play { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 24px); height: calc(100dvh - 24px); min-height: 500px; max-height: 980px; }
+  .play { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 24px - var(--sat) - var(--sab)); height: calc(100dvh - 24px - var(--sat) - var(--sab)); min-height: 500px; max-height: 980px; }
   .play > * { flex: 0 0 auto; }
   .play .board-wrap { flex: 1 1 0; min-height: 0; margin: 0 !important; display: flex; }
   .play .board-wrap svg.board { width: 100%; height: 100%; }
   .play .status { margin: 0; }
   .play .pie { margin: 0; }
-  body.in-game .app { padding-bottom: 10px; }
+  body.in-game .app { padding-bottom: calc(10px + var(--sab)); }
   .brand { display: grid; gap: 2px; }
   .brand .conn { font-size: 11px; letter-spacing: .02em; }
   .stick.banned { opacity: .55; cursor: not-allowed; }
@@ -118,14 +119,15 @@
   .invite b { font-family: "Jua", sans-serif; font-weight: 400; font-size: 20px; }
   .invite span { font-size: 14px; color: var(--ink-2); }
   @media (max-height: 700px) {
-    .play { gap: 8px; }
+    .play { gap: 6px; }
+    .play .topbar { margin-bottom: 0; }
     .topbar h2 { font-size: 24px; }
-    .side { padding: 8px 12px; }
-    .sticks { gap: 6px; }
-    .stick { max-width: 170px; }
-    .status { min-height: 58px; padding: 6px 14px; }
-    .status .big { font-size: 40px; }
-    .status .msg { font-size: 14px; }
+    .play .side { padding: 2px 12px; }
+    .play .sticks { gap: 0; }
+    .play .stick { max-width: 170px; }
+    .play .status { min-height: 54px; padding: 4px 14px; }
+    .play .status .big { font-size: 40px; }
+    .play .status .msg { font-size: 14px; }
     .play .board-wrap { padding: 8px; }
   }
   .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
@@ -137,9 +139,9 @@
     background: var(--hwang); border-radius: 20px; padding: 8px 16px; margin: 12px 0; min-height: 72px;
   }
   .status .big { font-family: "Jua", sans-serif; font-size: 50px; line-height: 1; color: var(--ink); min-width: 56px; text-align: center; }
-  .status .big small { display: block; font-size: 11px; font-family: "Gowun Dodum", sans-serif; color: rgba(43,43,43,.65); letter-spacing: .1em; margin-top: 2px; }
+  .status .big small { display: block; font-size: 12px; font-family: "Gowun Dodum", sans-serif; color: rgba(43,43,43,.85); letter-spacing: .1em; margin-top: 2px; }
   .status .txt { display: grid; gap: 2px; }
-  .status .who { font-size: 11px; letter-spacing: .1em; color: rgba(43,43,43,.65); }
+  .status .who { font-size: 12px; letter-spacing: .06em; color: rgba(43,43,43,.85); }
   .status .msg { font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--ink); }
 
   .pie { display: grid; gap: 10px; padding: 12px 16px; border-radius: 20px; background: var(--hwang-zone); border: 2px solid var(--hwang); margin-bottom: 12px; }
@@ -150,18 +152,18 @@
   .side { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 20px; }
   .side.p0 { background: var(--cheong-zone); } .side.p1 { background: var(--hong-zone); }
   .side .name { font-family: "Jua", sans-serif; font-size: 17px; line-height: 1.1; min-width: 56px; }
-  .side.p0 .name { color: var(--cheong); } .side.p1 .name { color: var(--hong); }
-  .side .name .tag { display: block; font-family: "Gowun Dodum", sans-serif; font-size: 11px; margin-top: 2px; }
+  .side.p0 .name { color: var(--cheong-deep); } .side.p1 .name { color: var(--hong-deep); }
+  .side .name .tag { display: block; font-family: "Gowun Dodum", sans-serif; font-size: 12px; margin-top: 2px; }
   .side.p0 .tag, .side.p0 .cnt { color: var(--cheong-sub); } .side.p1 .tag, .side.p1 .cnt { color: var(--hong-sub); }
   .side.active { box-shadow: 0 0 0 3px var(--hwang); }
 
-  .sticks { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .sticks { display: flex; flex-direction: column; gap: 2px; align-items: center; }
   .stick {
-    width: 100%; max-width: 190px; aspect-ratio: 190 / 38; border: 0; padding: 0; position: relative; background: transparent;
-    perspective: 600px; border-radius: 999px; display: block;
+    width: 100%; max-width: 190px; height: 44px; border: 0; padding: 0; position: relative; background: transparent;
+    perspective: 600px; border-radius: 999px; display: block; container-type: inline-size;
   }
   .stick .face {
-    position: absolute; inset: 0; border-radius: 999px; transition: transform .45s cubic-bezier(.4,0,.2,1);
+    position: absolute; left: 0; right: 0; top: calc(50% - 10cqw); height: 20cqw; border-radius: 999px; transition: transform .45s cubic-bezier(.4,0,.2,1);
     backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 3px 3px rgba(0,0,0,.25));
   }
   .stick .face svg { display: block; width: 100%; height: 100%; }
@@ -169,7 +171,7 @@
   .stick .back { transform: rotateX(180deg); }
   .stick.down .flat { transform: rotateX(180deg); }
   .stick.down .back { transform: rotateX(360deg); }
-  .stick.can::after { content: ""; position: absolute; inset: -3px; border-radius: 999px; border: 3px solid var(--hwang); pointer-events: none; }
+  .stick.can::after { content: ""; position: absolute; left: -3px; right: -3px; top: calc(50% - 10cqw - 3px); height: calc(20cqw + 6px); border-radius: 999px; border: 3px solid var(--hwang); pointer-events: none; }
   .stick .hint {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
     font-family: "Jua", sans-serif; font-size: 14px; color: var(--ink); background: var(--hwang); border-radius: 999px; padding: 1px 9px;
@@ -179,21 +181,24 @@
   .stick.can .hint { opacity: 1; }
   .stick:not(.can) { cursor: default; }
 
-  .home { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; min-width: 48px; padding: 4px 6px; border-radius: 12px; }
+  .home { display: flex; flex-direction: column; justify-content: center; gap: 4px; align-items: flex-end; min-width: 48px; min-height: 48px; padding: 4px 6px; border-radius: 12px; }
   .home .dots { display: flex; gap: 3px; min-height: 14px; }
   .home .pc { width: 14px; height: 14px; border-radius: 50%; display: inline-block; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18); }
   .side.p0 .home .pc { background: var(--cheong); } .side.p1 .home .pc { background: var(--hong); }
   .home.can { cursor: pointer; background: var(--card); box-shadow: 0 0 0 3px var(--hwang); }
-  .home .cnt { font-size: 11px; white-space: nowrap; }
+  .home .cnt { font-size: 12px; white-space: nowrap; }
 
   .board-wrap { margin: 12px 0; padding: 12px; border-radius: 26px; background: var(--card); box-shadow: 0 8px 0 var(--edge); }
   svg.board { width: 100%; height: auto; display: block; touch-action: manipulation; }
   .node { fill: var(--bg); stroke: var(--ink); stroke-width: 1.4; }
   .node.big { stroke-width: 1.9; } .node.inner { fill: none; stroke-width: 1.6; }
   .lines { stroke: var(--ink); stroke-width: 1.4; fill: none; }
-  .target { fill: var(--hwang); opacity: 0; cursor: pointer; transition: opacity .2s; }
-  .target.on { opacity: .35; }
-  .target.on.cap { fill: var(--hong); opacity: .4; }
+  .target .tv { fill: var(--hwang); opacity: 0; transition: opacity .2s; } .target { cursor: pointer; }
+  .hit { fill: transparent; stroke: none; }
+  .target:not(.on) { pointer-events: none; }
+  .piece:focus, .target:focus { outline: none; } .piece:focus-visible circle.ring, .target:focus-visible .tv { stroke: var(--focus); stroke-width: 1.4; opacity: 1; } .home:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .target.on .tv { opacity: .35; }
+  .target.on.cap .tv { fill: var(--hong); opacity: .4; }
   .piece { transition: transform .5s cubic-bezier(.4,0,.2,1); cursor: default; }
   .piece circle.body { stroke: #fff; stroke-width: 1.1; }
   .piece.p0 circle.body { fill: var(--cheong); } .piece.p1 circle.body { fill: var(--hong); }
@@ -231,9 +236,9 @@
   .sheet .close { float: right; }
   .ladder { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 4px; font-family: "Jua", sans-serif; font-size: 22px; }
   .ladder span { text-align: center; }
-  .ladder small { display: block; font-size: 11px; color: var(--ink-3); font-family: "Gowun Dodum", sans-serif; }
+  .ladder small { display: block; font-size: 12px; color: var(--ink-3); font-family: "Gowun Dodum", sans-serif; }
   .ladder .arr { color: var(--ink-3); font-size: 14px; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
+  .toast { position: fixed; left: 50%; top: calc(var(--sat) + 10px); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
   .toast.on { opacity: 1; }
   html[lang=en] .status .big { font-size: 30px; } html[lang=en] .status .big small { letter-spacing: .02em; }
   @media (max-height: 700px) { html[lang=en] .status .big { font-size: 26px; } }
@@ -332,7 +337,7 @@
 
     <div class="board-wrap"><svg class="board" id="board" viewBox="0 0 100 104" aria-label="윷판"></svg></div>
 
-    <div class="status"><div class="big" id="stBig"></div><div class="txt"><div class="who" id="stWho"></div><div class="msg" id="stMsg"></div></div></div>
+    <div class="status"><div class="big" id="stBig"></div><div class="txt" role="status" aria-live="polite"><div class="who" id="stWho"></div><div class="msg" id="stMsg"></div></div></div>
     <div class="pie" id="piePanel" hidden>
       <p id="pieMsg"></p>
       <div class="row2"><button id="pieKeep">그대로 둔다</button><button id="pieSwap" class="pick">편을 바꾼다</button></div>
@@ -395,7 +400,7 @@
   <p style="font-size:12px">청·홍 말과 명절 색동의 색, 실물 윷가락의 배와 등(X 표시)에서 모양을 빌렸어요.</p>
   <p style="font-size:12px">문의 <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
 </div></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>/* 윷두기 규칙 엔진 — 브라우저/Node 공용, 부수효과 없음(순수 함수) */
@@ -654,21 +659,33 @@
     return search(g, depth || 4, -Infinity, Infinity, side);
   }
 
-  function bestMove(g, depth) {
+  // depth: 최대 깊이. ms를 주면 얕은 깊이부터 차례로 읽다가 시간이 모자라면 거기서 멈춘다(느린 폰에서도 화면이 멈추지 않게).
+  function bestMove(g, depth, ms) {
     depth = depth || 4;
     g = Object.assign({}, g, { history: [] });
     const me = g.turn;
     const moves = legalMoves(g);
-    let best = null, bestV = -Infinity;
     // 잡기·완주 등 확실히 좋은 수를 먼저 보면 가지치기가 잘 됨
     moves.sort((a, b) => (b.captures.length * 10 + (b.to === F ? 5 : 0)) - (a.captures.length * 10 + (a.to === F ? 5 : 0)));
-    for (const m of moves) {
-      const v = search(m.next, depth - 1, -Infinity, Infinity, me);
-      if (v > bestV) { bestV = v; best = m; }
+    const now = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+    const t0 = now();
+    let best = null;
+    for (let d = ms ? Math.min(3, depth) : depth; d <= depth; d++) {
+      let b = null, bv = -Infinity;
+      for (const m of moves) {
+        const v = search(m.next, d - 1, -Infinity, Infinity, me);
+        if (v > bv) { bv = v; b = m; }
+      }
+      best = b;
+      if (!ms || d === depth) break;
+      // 한 단계 더 읽으면 대략 네 배가 걸린다 → 시간 안에 못 끝낼 것 같으면 멈춘다
+      if ((now() - t0) * 4 > ms) break;
+      moves.splice(moves.indexOf(b), 1); moves.unshift(b); // 다음 깊이는 지금 최선수부터
     }
     if (best) delete best.next;
     return best;
   }
+
 
   return { F, START, posKey, ROUTES, BRANCH, RESULT, STEPS, newGame, clone, countUp, nodeOf, flipOptions, moveOptions, moveChoices, stickChoices, turnMoves, flip, move, play, legalMoves, evaluate, bestMove, valueOf, remaining };
 });
@@ -719,7 +736,7 @@
   const R = i => LANG === 'en' ? R_EN[i] : Y.RESULT[i];
   function placeName(n) { return n === 0 ? L('집', 'off board') : n === Y.F ? L('완주', 'home') : n === 22 ? L('가운데', 'center') : n === Y.START ? L('출발점', 'start') : L(n + '칸', '#' + n); }
   const RULES_URL = 'https://imlovenurlove-sys.github.io/yutdugi/how-to-play.html';
-  const PRIVACY_URL = 'https://imlovenurlove-sys.github.io/yutdugi/privacy.html';
+  const PRIVACY_URL = 'https://imlovenurlove-sys.github.io/yutdugi/privacy-en.html';
   document.documentElement.lang = LANG;
   if (LANG === 'en') {
     document.title = 'Yutdugi — The Korean Stick Game You Win by Thinking';
@@ -742,7 +759,7 @@
       ['#pieSeg [data-v="0"]', 'Off'], ['#pieSeg [data-v="1"]', 'Choose sides after move 3'],
       ['#startBtn', 'Start game'],
       ['#lobby [data-open=rules]', 'How to play'], ['#lobby [data-open=about]', 'About'],
-      ['#lobby .legal', '<a href="' + RULES_URL + '" target="_blank" rel="noopener">Illustrated rules</a> · <a href="' + PRIVACY_URL + '" target="_blank" rel="noopener">Privacy notice (Korean)</a>'],
+      ['#lobby .legal', '<a href="' + RULES_URL + '" target="_blank" rel="noopener">Illustrated rules</a> · <a href="' + PRIVACY_URL + '" target="_blank" rel="noopener">Privacy</a>'],
       ['#room .eyebrow', 'Room code'], ['#room .room > .sub', 'Send this code to a friend, or share the link.'],
       ['#copyLink', 'Copy link'], ['#shareLink', 'Share'], ['#conn', 'Connecting…'],
       ['#hostPanel label', 'Fair-start rule'], ['#pieSeg2 [data-v="0"]', 'Off'], ['#pieSeg2 [data-v="1"]', 'Choose sides after move 3'],
@@ -775,7 +792,7 @@
   <p>Yutdugi is a variant of Korea’s traditional stick-throwing board game (officially <i>Yunnori</i>, a National Intangible Cultural Heritage of Korea since 2022), with the luck taken out. Every stick is visible to both players, so, like chess or Go, it’s a game of <b>perfect information</b>.</p>
   <p>To play someone far away, create a room and send the code. You can also play two people on one device, or against the computer. Tap “Hint” to see the move the computer recommends.</p>
   <p style="font-size:12px">Blue and Red pieces and the rainbow stripes of Korean holiday clothing; the sticks follow real ones — a flat side and a round side marked with X.</p>
-  <p style="font-size:12px">Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy notice (Korean)</a></p>`],
+  <p style="font-size:12px">Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`],
     ];
     H.forEach(([sel, html]) => document.querySelectorAll(sel).forEach(el => { el.innerHTML = html; }));
     const A = [
@@ -848,7 +865,22 @@
   $('#lobbyPair').innerHTML = stickSVG(true) + stickSVG(false);
   $('#resPair').innerHTML = stickSVG(true) + stickSVG(false);
 
-  function show(id) { ['lobby', 'room', 'game', 'result'].forEach(s => $('#' + s).hidden = s !== id); document.body.classList.toggle('in-game', id === 'game'); window.scrollTo(0, 0); }
+  function show(id, fromPop) {
+    ['lobby', 'room', 'game', 'result'].forEach(s => $('#' + s).hidden = s !== id); document.body.classList.toggle('in-game', id === 'game'); window.scrollTo(0, 0);
+    // 뒤로 가기(폰의 뒤로 버튼·제스처)가 사이트를 떠나지 않게: 방·대국·결과 화면은 기록 한 칸을 쓴다
+    const inner = history.state && history.state.yd;
+    if (id !== 'lobby' && !inner) history.pushState({ yd: 1 }, '', location.href);
+    else if (id === 'lobby' && inner && !fromPop) { S.ignorePop = true; history.back(); }
+  }
+  window.addEventListener('popstate', () => {
+    if (S.ignorePop) { S.ignorePop = false; forgetRoom(); return; }
+    const scr = ['room', 'game', 'result'].find(s => !$('#' + s).hidden);
+    const open = document.querySelector('.modal:not([hidden])');
+    if (open) { open.hidden = true; if (scr) history.pushState({ yd: 1 }, '', location.href); return; }
+    if (!scr) return;
+    if (scr === 'game' && S.g && S.g.winner == null && !confirm(L('판을 접을까요?', 'Quit this game?'))) { history.pushState({ yd: 1 }, '', location.href); return; }
+    clearTimers(); leaveNet(); forgetRoom(); show('lobby', true);
+  });
   function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); later(() => el.classList.remove('on'), 2000); }
 
   // ---------- 판 그리기(1회) ----------
@@ -863,9 +895,9 @@
       else h += `<circle cx="${x}" cy="${y}" r="3.4" class="node"/>`;
     }
     h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">${L('출발 · 도착', 'Start · Home')}</text>`;
-    for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<circle cx="${x}" cy="${y}" r="6.2" class="target" data-node="${n}"/>`; }
+    for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<g class="target" data-node="${n}"><circle class="tv" cx="${x}" cy="${y}" r="6.2"/><circle class="hit" cx="${x}" cy="${y}" r="8"/></g>`; }
     for (let p = 0; p < 2; p++) for (let i = 0; i < 4; i++) {
-      h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="ring" r="5.2"/><circle class="body" r="3.7"/><text class="cnt"></text></g>`;
+      h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="hit" r="8"/><circle class="ring" r="5.2"/><circle class="body" r="3.7"/><text class="cnt"></text></g>`;
     }
     svg.innerHTML = h;
     svg.querySelectorAll('.target').forEach(t => t.addEventListener('click', () => onTarget(+t.dataset.node)));
@@ -918,6 +950,25 @@
   }
 
   // ---------- 렌더 ----------
+  // 키보드·화면 읽기: 지금 누를 수 있는 말·칸·집만 초점이 가게
+  function a11ySync() {
+    document.querySelectorAll('#board .piece, #board .target, .home').forEach(el => {
+      const on = el.classList.contains('can') || el.classList.contains('on');
+      if (!on) { el.removeAttribute('tabindex'); el.removeAttribute('role'); el.removeAttribute('aria-label'); return; }
+      el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
+      let lab;
+      if (el.classList.contains('home')) lab = L('새 말 내보내기', 'Enter a new piece');
+      else if (el.classList.contains('target')) lab = L(`${placeName(+el.dataset.node)}(으)로 옮기기`, `Move to ${placeName(+el.dataset.node)}`);
+      else { const pc = S.g.pieces[+el.dataset.p][+el.dataset.i]; lab = L(`${S.names[+el.dataset.p]} 말 · ${placeName(Y.nodeOf(pc))}`, `${S.names[+el.dataset.p]} piece · ${placeName(Y.nodeOf(pc))}`); }
+      el.setAttribute('aria-label', lab);
+    });
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { document.querySelectorAll('.modal:not([hidden])').forEach(m => m.hidden = true); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('#board .piece[tabindex], #board .target[tabindex], .home[tabindex]')) {
+      e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
   function render() {
     const g = S.g;
     const cur = g.turn;
@@ -977,6 +1028,7 @@
     // 이름표: 온라인이면 내 편 표시
     for (let p = 0; p < 2; p++) { $('#name' + p).textContent = S.names[p]; $('#tag' + p).textContent = (S.mode === 'online' && controls(p) ? L('나 · ', 'You · ') : '') + (p === 0 ? L('먼저', 'First') : L('나중', 'Second')); }
     // 상태줄
+    a11ySync();
     const who = $('#stWho'), msg = $('#stMsg'), big = $('#stBig');
     const KSTEP = LANG === 'en' ? ['', '1 space', '2 spaces', '3 spaces', '4 spaces', '5 spaces'] : ['', '한 칸', '두 칸', '세 칸', '네 칸', '다섯 칸'];
     if (g.winner != null) { who.textContent = L('판 끝', 'Game over'); msg.textContent = g.winner === -1 ? L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부', 'Draw — every legal move would repeat a position a third time') : L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`); big.innerHTML = g.winner === -1 ? L('반', '½') : L('끝', 'End'); return; }
@@ -1084,7 +1136,7 @@
     const where = n => placeName(n);
     const extra = (opt.captures.length ? L(' · 잡음', ' · capture') : '') + (opt.stacks.length ? L(' · 업음', ' · stack') : '');
     const line = document.createElement('div');
-    line.innerHTML = `${S.g.ply}. <b>${S.names[p]}</b> ${R(r)} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
+    line.innerHTML = `${S.g.ply}. <b>${esc(S.names[p])}</b> ${R(r)} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
     $('#log').prepend(line);
   }
 
@@ -1094,7 +1146,7 @@
     if (g.winner != null || !isAI(g.turn) || S.pieState === 'ask') return;
     S.busy = true; render();
     later(() => {
-      const m = Y.bestMove(S.g, S.depth);
+      const m = Y.bestMove(S.g, S.depth, 900);
       S.g = Y.flip(S.g, m.stick); render();
       later(() => { S.busy = false; doMove(m.from, false); }, 750);
     }, 500);
@@ -1108,7 +1160,7 @@
       opts.forEach(o => { const v = Y.evaluate(o.next, g.turn); if (v > bv) { bv = v; best = o; } });
       toast(L(`훈수: ${best.from === 0 ? '새 말을 내보내요' : best.from + '칸의 말을 옮겨요'}`, `Hint: ${best.from === 0 ? 'enter a new piece' : 'move the piece on #' + best.from}`));
     } else {
-      const m = Y.bestMove(g, Math.max(S.depth, 4));
+      const m = Y.bestMove(g, Math.max(S.depth, 4), 900);
       const stick = $(`#sticks${g.turn} .stick[data-s="${m.stick}"]`);
       stick.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 500, iterations: 2 });
       toast(L(`훈수: ${m.stick + 1}번 가락을 뒤집어 ${R(m.result)} → ${m.from === 0 ? '새 말' : m.from + '칸 말'}을 ${m.to === Y.F ? '완주' : m.to + '칸으로'}${m.captures.length ? ' (잡기)' : ''}`, `Hint: flip stick ${m.stick + 1} for ${R(m.result)} → move ${m.from === 0 ? 'a new piece' : 'the piece on #' + m.from} ${m.to === Y.F ? 'home' : 'to #' + m.to}${m.captures.length ? ' (capture)' : ''}`));
@@ -1142,7 +1194,7 @@
   $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast(L('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.', 'Could not load the online module. Please refresh.')); enterRoom(makeCode(), true); });
   $('#joinInvite').addEventListener('click', () => {
     if (!($('#nick').value || '').trim()) { $('#nick').focus(); return toast(L('이름을 먼저 적어 주세요', 'Please enter your name first')); }
-    const code = S.invite; S.invite = null;
+    const code = S.invite; if (!code) return; S.invite = null;
     $('#invite').hidden = true; $('#joinInvite').hidden = true; $('#mkRoom').hidden = false; $('#joinRoomBtn').parentElement.hidden = false; document.querySelector('.mode-list').hidden = false;
     enterRoom(code, false);
   });
@@ -1155,7 +1207,7 @@
     const data = { title: L('윷두기', 'Yutdugi'), text: L(`윷두기 한 판 둘까요? 방 코드 ${S.room}`, `Play a game of Yutdugi with me? Room code ${S.room}`), url: roomLink() };
     if (navigator.share) { try { await navigator.share(data); } catch (e) {} } else { try { await navigator.clipboard.writeText(roomLink()); toast(L('링크를 복사했어요', 'Link copied')); } catch (e) { toast(roomLink()); } }
   });
-  function roomLink() { const u = new URL(location.href); u.search = '?room=' + S.room; return u.toString(); }
+  function roomLink() { const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform(); const u = new URL(native ? 'https://imlovenurlove-sys.github.io/yutdugi/' : location.href); u.search = '?room=' + S.room; return u.toString(); }
 
   let client = null, beat = null;
   // 방에 누가 있는지: 서버의 presence 기능 대신, 각자 2.5초마다 '여기 있어요' 신호를 보내고 9초간 소식이 없으면 나간 것으로 본다
@@ -1220,7 +1272,7 @@
       if (!acceptState(payload)) return;
       S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
       S.g = payload.g; $('#name0').textContent = S.names[0]; $('#name1').textContent = S.names[1];
-      $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => placeName(n); line.innerHTML = (i + 1) + '. <b>' + S.names[h.p] + '</b> ' + R(h.result) + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? L(' · 잡음', ' · capture') : '') + (h.stacked ? L(' · 업음', ' · stack') : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
+      $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => placeName(n); line.innerHTML = (i + 1) + '. <b>' + esc(S.names[h.p]) + '</b> ' + R(h.result) + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? L(' · 잡음', ' · capture') : '') + (h.stacked ? L(' · 업음', ' · stack') : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
       if (S.pieState === 'ask') pieAsk();
       if (S.g.winner != null) showResult();
     });
@@ -1280,6 +1332,9 @@
   }
 
   window.addEventListener('pagehide', () => { if (S.net) try { send('bye', {}); } catch (e) {} });
+
+  // ---------- 오프라인 지원 ----------
+  /*SW*/if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.href)) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }/*/SW*/
 
   // ---------- 시작 ----------
   buildBoard();

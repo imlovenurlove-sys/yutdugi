@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5"><meta name="description" content="Yutdugi privacy notice"><link rel="icon" href="icon-192.png"><title>Yutdugi Privacy Notice</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  :root { color-scheme: light; --bg:#FFF6E5; --card:#FFFFFF; --edge:#F2D9B8; --ink:#2B2B2B; --ink-2:#4A4A4A; --ink-3:#6F665B; --cheong:#2E6BE6; --hong:#E0452E; --hong-sub:#9E4038; --hwang:#F7B500; --nok:#2FA36B; --ja:#7B4BC9; }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body { margin:0; color:var(--ink); font-family:"Gowun Dodum","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; font-size:15px; line-height:1.7; }
+  h1, h2 { font-family:"Jua","Gowun Dodum",sans-serif; font-weight:400; text-wrap:balance; }
+  .wrap { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+  .stripe { display:flex; height:8px; border-radius:4px; overflow:hidden; margin-bottom:18px; }
+  .stripe i { flex:1; } .stripe i:nth-child(1){background:var(--cheong)} .stripe i:nth-child(2){background:var(--hong)} .stripe i:nth-child(3){background:var(--hwang)} .stripe i:nth-child(4){background:var(--nok)} .stripe i:nth-child(5){background:var(--ja)}
+  .eyebrow { font-size:12px; letter-spacing:.2em; color:var(--hong-sub); margin:0; }
+  h1 { font-size:30px; margin:4px 0 6px; }
+  .lead { color:var(--ink-2); margin:0 0 18px; }
+  .card { background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:16px 18px; margin:0 0 14px; box-shadow:0 3px 0 var(--edge); }
+  .card h2 { font-size:20px; margin:0 0 6px; }
+  .card p { margin:6px 0; }
+  ul { margin:6px 0; padding-left:20px; } li { margin:4px 0; }
+  .sum { background:#FFF0C2; border-color:#F2D08A; box-shadow:0 3px 0 #F2D08A; }
+  .sum b { font-family:"Jua","Gowun Dodum",sans-serif; font-weight:400; font-size:17px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin-top:6px; }
+  th, td { text-align:left; vertical-align:top; padding:8px 6px; border-top:1px solid var(--edge); }
+  th { font-weight:400; color:var(--ink-3); font-size:12px; border-top:0; padding-top:0; }
+  .contact dt { color:var(--ink-3); font-size:13px; margin-top:8px; }
+  .contact dd { margin:0; font-size:17px; }
+  a { color:#1F4FB0; }
+  .back { display:inline-block; margin-top:8px; font-family:"Jua","Gowun Dodum",sans-serif; font-size:17px; text-decoration:none; background:var(--card); border:2px solid var(--edge); border-radius:999px; padding:8px 18px; color:var(--ink); }
+  .meta { color:var(--ink-3); font-size:13px; margin-top:18px; }
+  @media (max-width:420px) { table, thead, tbody, tr, th, td { display:block; } thead { display:none; } td { border-top:0; padding:2px 0; } tr { border-top:1px solid var(--edge); padding:8px 0; } td:first-child { font-weight:700; } }
+</style></head>
+<body><main class="wrap">
+  <div class="stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="eyebrow">Yutdugi</p>
+  <h1>Privacy notice</h1>
+  <p class="lead">Yutdugi needs no account and no sign-up. Here is exactly what information goes where. <a href="privacy.html" lang="ko">한국어</a></p>
+
+  <section class="card sum">
+    <p><b>In one line</b></p>
+    <p>There is no sign-up or login, and the operator does not collect or store personal information such as names or contact details on any server. No ads, no analytics, no tracking cookies.</p>
+  </section>
+
+  <section class="card">
+    <h2>1. What is handled and why</h2>
+    <table>
+      <thead><tr><th>Information</th><th>Where and why</th><th>How long</th></tr></thead>
+      <tbody>
+        <tr><td>Nickname (if you type one)</td><td>Sent in real time to the other people in the same online room so they can see who they are playing. It is not stored on a server.</td><td>Gone when the game ends</td></tr>
+        <tr><td>Nickname (on your device)</td><td>Saved only in your own browser (localStorage) so you don’t have to type it again.</td><td>Until you clear your browser data</td></tr>
+        <tr><td>Room code, temporary ID, moves</td><td>Exchanged only through the real-time relay and kept in your browser tab (sessionStorage) so players in the same room stay in sync and can continue after a refresh. These are random values that do not identify you.</td><td>Gone when you close the tab</td></tr>
+      </tbody>
+    </table>
+    <p>Playing against the computer or with two players on one device runs entirely on your device.</p>
+  </section>
+
+  <section class="card">
+    <h2>2. Third-party services</h2>
+    <p>The services below are needed to deliver the page and relay online games. While you connect, each service may keep technical logs such as your IP address, browser information and access time under its own policy.</p>
+    <ul>
+      <li><b>GitHub Pages</b> (GitHub, Inc., USA) — hosts the web page</li>
+      <li><b>Supabase</b> (Supabase, Inc., servers in Seoul, Korea) — relays online games in real time</li>
+      <li><b>Google Fonts</b> (Google LLC, USA) — provides the typefaces</li>
+      <li><b>jsDelivr</b> — delivers the relay library file</li>
+    </ul>
+    <p>The operator does not receive these logs or pass them to anyone.</p>
+  </section>
+
+  <section class="card">
+    <h2>3. Sharing and selling</h2>
+    <p>We do not provide or sell personal information to any person or company. The only exception would be a request made under applicable law.</p>
+  </section>
+
+  <section class="card">
+    <h2>4. Deleting your information</h2>
+    <p>Clearing this site’s data in your browser settings removes the saved nickname immediately. Nothing about you remains on a server to delete.</p>
+  </section>
+
+  <section class="card">
+    <h2>5. Children</h2>
+    <p>We do not ask for age or collect any information. We recommend not using a real name or contact details as a nickname.</p>
+  </section>
+
+  <section class="card">
+    <h2>6. Contact</h2>
+    <p>For any privacy question or request, please contact:</p>
+    <dl class="contact">
+      <dt>Operator</dt><dd>Yutdugi operator</dd>
+      <dt>Email</dt><dd><a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a></dd>
+      <dt>Phone (South Korea)</dt><dd><a href="tel:+821066311065">+82 10-6631-1065</a></dd>
+    </dl>
+    <p style="font-size:13px;color:var(--ink-2)">You may also contact the Korean Personal Information Infringement Report Center at +82-118 (privacy.kisa.or.kr).</p>
+  </section>
+
+  <section class="card">
+    <h2>7. Changes to this notice</h2>
+    <p>If anything changes, we will post it on this page first and update the effective date.</p>
+  </section>
+
+  <p class="meta">Effective: October 12, 2026</p>
+  <a class="back" href="./?lang=en">Back to Yutdugi</a>
+</main></body></html>

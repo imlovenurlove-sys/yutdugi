@@ -1,1 +1,37 @@
-{"name": "윷두기", "short_name": "윷두기", "start_url": "./", "display": "standalone", "background_color": "#FFF6E5", "theme_color": "#FFF6E5", "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}], "description": "던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다.", "lang": "ko", "scope": "./"}
+{
+ "name": "윷두기 Yutdugi",
+ "short_name": "윷두기",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#FFF6E5",
+ "theme_color": "#FFF6E5",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "description": "던지지 않는 윷놀이 — 가락을 뒤집어 수를 읽는다. The Korean stick game you win by thinking.",
+ "lang": "ko",
+ "scope": "./",
+ "id": "/yutdugi/",
+ "orientation": "portrait",
+ "categories": [
+  "games",
+  "board"
+ ]
+}
