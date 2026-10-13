@@ -1,6 +1,6 @@
 // 윷두기 서비스 워커 — 한 번 연 뒤에는 인터넷이 없어도 혼자·둘이 두기가 된다.
 // 페이지는 '네트워크 먼저'(새 버전이 바로 반영), 그림·글꼴은 '저장본 먼저'.
-const VERSION = 'yutdugi-v3';
+const VERSION = 'yutdugi-v4';
 const SHELL = ['./', 'index.html', 'how-to-play.html', 'privacy.html', 'privacy-en.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

@@ -19,6 +19,7 @@
 
   * { box-sizing: border-box; }
   html { background: var(--bg); }
+  html[lang=ko] body { word-break: keep-all; overflow-wrap: break-word; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
@@ -79,7 +80,7 @@
   .mode:active { transform: translateY(2px); }
   .mode .glyph { width: 52px; height: 52px; border-radius: 16px; background: var(--card); display: flex; justify-content: center; align-items: center; }
   .mode b { display: block; font-family: "Jua", sans-serif; font-weight: 400; font-size: 21px; line-height: 1.1; }
-  .mode span span { color: var(--ink-2); font-size: 13px; display: block; margin-top: 3px; }
+  .mode span span { color: var(--ink-2); font-size: 13px; display: block; margin-top: 3px; text-wrap: pretty; }
   .mode[data-mode="online"] { background: var(--hong-zone); } .mode[data-mode="online"] b { color: #C8371F; }
   .mode[data-mode="ai"] { background: var(--hwang-zone); } .mode[data-mode="ai"] b { color: var(--hwang-sub); }
   .mode[data-mode="hotseat"] { background: var(--cheong-zone); } .mode[data-mode="hotseat"] b { color: var(--cheong); }
@@ -173,8 +174,8 @@
   .stick.down .back { transform: rotateX(360deg); }
   .stick.can::after { content: ""; position: absolute; left: -3px; right: -3px; top: calc(50% - 10cqw - 3px); height: calc(20cqw + 6px); border-radius: 999px; border: 3px solid var(--hwang); pointer-events: none; }
   .stick .hint {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    font-family: "Jua", sans-serif; font-size: 14px; color: var(--ink); background: var(--hwang); border-radius: 999px; padding: 1px 9px;
+    position: absolute; right: -4px; top: -3px;
+    font-family: "Jua", sans-serif; font-size: 12.5px; line-height: 16px; color: var(--ink); background: var(--hwang); border-radius: 999px; padding: 0 6px; z-index: 2;
     white-space: nowrap; opacity: 0; transition: opacity .2s; box-shadow: 0 2px 0 rgba(0,0,0,.15); pointer-events: none;
   }
   .stick.can { cursor: pointer; }
@@ -189,7 +190,7 @@
   .home .cnt { font-size: 12px; white-space: nowrap; }
 
   .board-wrap { margin: 12px 0; padding: 12px; border-radius: 26px; background: var(--card); box-shadow: 0 8px 0 var(--edge); }
-  svg.board { width: 100%; height: auto; display: block; touch-action: manipulation; }
+  svg.board { width: 100%; height: auto; display: block; touch-action: manipulation; overflow: visible; }
   .node { fill: var(--bg); stroke: var(--ink); stroke-width: 1.4; }
   .node.big { stroke-width: 1.9; } .node.inner { fill: none; stroke-width: 1.6; }
   .lines { stroke: var(--ink); stroke-width: 1.4; fill: none; }
@@ -207,14 +208,18 @@
   .piece.can circle.ring { stroke: var(--hwang); stroke-width: 1.4; fill: none; animation: pulse 1.1s ease-in-out infinite; }
   .piece:not(.can) circle.ring { display: none; }
   .piece.hidden { display: none; }
+  .piece.hinted, .target.hinted .tv { animation: glowP .65s ease-in-out 4; } .target.hinted .tv { opacity: .8; } .home.hinted { animation: glowH .65s ease-in-out 4; }
+  @keyframes glowP { 50% { filter: drop-shadow(0 0 2px #F7B500) drop-shadow(0 0 5px #F7B500); } }
+  @keyframes glowH { 50% { box-shadow: 0 0 0 4px var(--hwang); } }
   @keyframes pulse { 0%,100% { r: 4.8; opacity: 1 } 50% { r: 6.2; opacity: .4 } }
+  .dir { fill: none; stroke: var(--hwang-sub); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; opacity: .75; pointer-events: none; }
   .startlabel { font-family: "Gowun Dodum", sans-serif; font-size: 3.6px; fill: var(--ink-3); }
 
   .log { margin-top: 12px; font-size: 12.5px; color: var(--ink-2); max-height: 84px; overflow: auto; padding: 0 6px; line-height: 1.6; }
   .log b { color: var(--ink); }
 
   /* ---------- 결과 ---------- */
-  .result { text-align: center; padding: 6px 0 0; display: flex; flex-direction: column; gap: 12px; min-height: 70vh; }
+  .result { text-align: center; padding: 6px 0 0; display: flex; flex-direction: column; gap: 12px; min-height: min(62vh, 600px); }
   .result .head { padding: 22px 0 4px; }
   .result h2 { font-size: 72px; line-height: 1; margin: 8px 0 6px; }
   .result h2.p0 { color: var(--cheong); } .result h2.p1 { color: var(--hong); } .result h2.draw { color: var(--ink); }
@@ -234,16 +239,17 @@
   .sheet p, .sheet li { color: var(--ink-2); font-size: 14px; }
   .sheet ol { padding-left: 20px; }
   .sheet .close { float: right; }
+  .faces { display: flex; justify-content: center; gap: 18px; margin: 10px 0 2px; text-align: center; } .faces figure { margin: 0; display: grid; gap: 4px; justify-items: center; font-size: 13px; color: var(--ink-2); } .faces svg { width: 96px; height: auto; filter: drop-shadow(0 2px 2px rgba(0,0,0,.2)); }
   .ladder { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 4px; font-family: "Jua", sans-serif; font-size: 22px; }
   .ladder span { text-align: center; }
   .ladder small { display: block; font-size: 12px; color: var(--ink-3); font-family: "Gowun Dodum", sans-serif; }
   .ladder .arr { color: var(--ink-3); font-size: 14px; }
-  .toast { position: fixed; left: 50%; top: calc(var(--sat) + 10px); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
+  .toast { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
   .toast.on { opacity: 1; }
   html[lang=en] .status .big { font-size: 30px; } html[lang=en] .status .big small { letter-spacing: .02em; }
   @media (max-height: 700px) { html[lang=en] .status .big { font-size: 26px; } }
   html[lang=en] .topbar .tools .ghost { padding-left: 10px; padding-right: 10px; }
-  @media (prefers-reduced-motion: reduce) { .stick .face, .piece { transition: none; } .piece.can circle.ring { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .stick .face, .piece { transition: none; } .piece.can circle.ring, .piece.hinted, .target.hinted .tv, .home.hinted { animation: none; } .piece.hinted { filter: drop-shadow(0 0 3px #F7B500); } .home.hinted { box-shadow: 0 0 0 4px var(--hwang); } }
 
 
 </style>
@@ -263,14 +269,14 @@
       <p>가락을 뒤집어 수를 읽어요.<br>운은 없고, 수읽기만 있어요.</p>
     </div>
     <div class="mode-list" role="group" aria-label="대전 방식">
-      <button class="mode" data-mode="online" aria-pressed="true"><span class="glyph"><svg viewBox="0 0 40 24" width="30" height="20" aria-hidden="true"><circle cx="9" cy="12" r="7" fill="#2E6BE6"/><circle cx="31" cy="12" r="7" fill="#E0452E"/><path d="M16 12h8M21 9l3 3-3 3" stroke="#2B2B2B" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span><span><b>멀리서 두기</b><span>방을 만들고 코드를 보내면 친구가 들어와요</span></span></button>
+      <button class="mode" data-mode="online" aria-pressed="true"><span class="glyph"><svg viewBox="0 0 40 24" width="30" height="20" aria-hidden="true"><circle cx="9" cy="12" r="7" fill="#2E6BE6"/><circle cx="31" cy="12" r="7" fill="#E0452E"/><path d="M16 12h8M21 9l3 3-3 3" stroke="#2B2B2B" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span><span><b>멀리서 두기</b><span>방을 만들어 친구에게 코드를 보내요</span></span></button>
       <button class="mode" data-mode="ai" aria-pressed="false"><span class="glyph"><svg viewBox="0 0 40 24" width="30" height="20" aria-hidden="true"><circle cx="11" cy="12" r="8" fill="#2E6BE6"/><rect x="21" y="4" width="16" height="16" rx="4" fill="#2B2B2B"/><circle cx="26" cy="11" r="2" fill="#fff"/><circle cx="32" cy="11" r="2" fill="#fff"/></svg></span><span><b>혼자 두기</b><span>컴퓨터와 겨뤄요 · 실력 고르기</span></span></button>
-      <button class="mode" data-mode="hotseat" aria-pressed="false"><span class="glyph"><svg viewBox="0 0 40 24" width="30" height="20" aria-hidden="true"><circle cx="11" cy="12" r="8" fill="#2E6BE6"/><circle cx="29" cy="12" r="8" fill="#E0452E"/></svg></span><span><b>둘이 두기</b><span>한 폰으로 번갈아 둬요 (마주 앉아서)</span></span></button>
+      <button class="mode" data-mode="hotseat" aria-pressed="false"><span class="glyph"><svg viewBox="0 0 40 24" width="30" height="20" aria-hidden="true"><circle cx="11" cy="12" r="8" fill="#2E6BE6"/><circle cx="29" cy="12" r="8" fill="#E0452E"/></svg></span><span><b>둘이 두기</b><span>한 폰을 주고받으며 둬요</span></span></button>
     </div>
 
     <div id="onlineOpts">
-      <div class="invite" id="invite" hidden><b>방 <span id="inviteCode"></span>에 초대받았어요</b><span>이름을 적고 들어가기를 눌러요.</span></div>
-      <div class="field"><label for="nick">내 이름</label><input id="nick" placeholder="예: 라파엘" maxlength="8"></div>
+      <div class="invite" id="invite" hidden><b>방 <span id="inviteCode"></span>에 초대받았어요</b><span>별명을 적거나 비워 둔 채 들어가기를 눌러요.</span></div>
+      <div class="field"><label for="nick">별명</label><input id="nick" placeholder="예: 윷도사" maxlength="8" autocomplete="off"></div>
       <button class="primary" id="joinInvite" hidden>들어가기</button>
       <button class="primary" id="mkRoom">방 만들기</button>
       <div class="foot"><button class="ghost" id="joinRoomBtn">코드로 들어가기</button></div>
@@ -278,7 +284,7 @@
     </div>
 
     <div id="localOpts">
-      <div class="row2">
+      <div class="row2" id="nameRow">
         <div class="field"><label for="n0">청 이름 · 먼저 두는 편</label><input id="n0" value="청" maxlength="8"></div>
         <div class="field"><label for="n1">홍 이름 · 나중 두는 편</label><input id="n1" value="홍" maxlength="8"></div>
       </div>
@@ -292,13 +298,13 @@
       </div>
     </div>
     <div id="ruleOpts">
-      <div class="field"><label>공평 규칙 (셋째 수 뒤 편 고르기)</label>
-        <div class="seg" id="pieSeg"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">셋째 수 뒤 편 고르기</button></div>
+      <div class="field"><label>공평 규칙 — 셋째 수 뒤에 나중 사람이 편을 바꿀 수 있어요</label>
+        <div class="seg" id="pieSeg"><button aria-pressed="true" data-v="0">끔</button><button aria-pressed="false" data-v="1">켬</button></div>
       </div>
     </div>
     <button class="primary" id="startBtn">판 벌이기</button>
-    <div class="foot"><button class="ghost" data-open="rules">놀이법</button><button class="ghost" data-open="about">이 판에 대하여</button><button class="ghost" id="langBtn" lang="en">English</button></div>
-    <p class="legal"><a href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
+    <div class="foot"><button class="ghost" data-open="rules">놀이법</button><button class="ghost" data-open="about">윷두기 소개</button><button class="ghost" id="langBtn" lang="en">English</button></div>
+    <p class="legal"><a data-site="privacy.html" href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
   </section>
 
   <!-- 방(대기) -->
@@ -311,12 +317,13 @@
       <div class="players" id="players"></div>
       <div class="conn" id="conn">연결 중…</div>
       <div id="hostPanel" hidden>
-        <div class="field"><label>공평 규칙</label>
-          <div class="seg" id="pieSeg2"><button aria-pressed="true" data-v="0">없음</button><button aria-pressed="false" data-v="1">셋째 수 뒤 편 고르기</button></div>
+        <div class="field"><label>공평 규칙 — 셋째 수 뒤에 나중 사람이 편을 바꿀 수 있어요</label>
+          <div class="seg" id="pieSeg2"><button aria-pressed="true" data-v="0">끔</button><button aria-pressed="false" data-v="1">켬</button></div>
         </div>
         <button class="primary" id="roomStart" disabled>친구를 기다리는 중…</button>
       </div>
       <p class="sub" id="guestNote" hidden>방장이 판을 벌이면 시작돼요.</p>
+      <div class="invite" id="emptyNote" hidden role="status"><b id="emptyMsg"></b><span id="emptySub">친구가 곧 들어온다면 그대로 기다려도 돼요.</span><button class="ghost" id="reCode">코드 다시 입력</button></div>
       <div class="foot"><button class="ghost" id="leaveRoom">나가기</button></div>
     </div>
   </section>
@@ -363,8 +370,9 @@
       </div>
       <div class="pair lg" id="resPair"></div>
       <div class="stats"><div class="stat"><b id="rsPly"></b><span>총 수</span></div><div class="stat"><b id="rsCap"></b><span>잡기</span></div><div class="stat"><b id="rsStack"></b><span>업기</span></div></div>
+      <div class="sub" id="rsNote" style="font-size:13px;margin-top:-6px">두 사람 합계</div>
       <div class="bottom">
-        <button class="primary blue" id="againBtn">한 판 더 — 먼저·나중 바꿔서</button>
+        <button class="primary blue" id="againBtn">한 판 더 (선후 바꿈)</button>
         <p class="sub" id="againNote" hidden>방장이 한 판 더를 누르면 시작돼요.</p>
         <div class="foot"><button class="ghost" id="toLobby">처음으로</button></div>
       </div>
@@ -377,6 +385,7 @@
   <button class="ghost close" data-close>닫기</button>
   <h3>윷두기 놀이법</h3>
   <p>윷을 던지지 않아요. 각자 손에 윷 두 가락을 들고, 네 가락을 <b>합쳐서</b> 읽어요.</p>
+  <div class="faces"></div>
   <div class="ladder"><span>모<small>0개</small></span><span class="arr">↔</span><span>도<small>1개</small></span><span class="arr">↔</span><span>개<small>2개</small></span><span class="arr">↔</span><span>걸<small>3개</small></span><span class="arr">↔</span><span>윷<small>4개</small></span></div>
   <p style="text-align:center;font-size:12px">배(평평한 면)가 위로 온 가락의 수 → 결과. 한 수마다 결과는 사다리에서 <b>한 칸씩만</b> 움직여요.</p>
   <ol>
@@ -394,11 +403,11 @@
 
 <div class="modal" id="mAbout" hidden><div class="sheet">
   <button class="ghost close" data-close>닫기</button>
-  <h3>이 판에 대하여</h3>
+  <h3>윷두기 소개</h3>
   <p>윷두기는 윷놀이의 운을 걷어내고 수읽기만 남긴 변형 놀이예요. 네 가락의 상태가 모두 보이므로 바둑·장기처럼 <b>완전정보 게임</b>이 돼요.</p>
   <p>멀리 있는 사람과 두려면 방을 만들어 코드를 보내면 돼요. 한 기기에서 둘이 두거나 컴퓨터와 둘 수도 있어요. '훈수'를 누르면 컴퓨터가 권하는 수를 보여줘요.</p>
-  <p style="font-size:12px">청·홍 말과 명절 색동의 색, 실물 윷가락의 배와 등(X 표시)에서 모양을 빌렸어요.</p>
-  <p style="font-size:12px">문의 <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
+  <p style="font-size:12px">말 색은 명절 색동에서, 가락 모양은 실물 윷의 배와 등(X 표시)에서 따왔어요.</p>
+  <p style="font-size:12px">문의 <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a data-site="privacy.html" href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
 </div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -734,9 +743,18 @@
   // 도·개·걸·윷·모의 본뜻(돼지·개·양·소·말)을 영어 이름으로 쓴다
   const R_EN = ['Horse', 'Pig', 'Dog', 'Sheep', 'Cow'];
   const R = i => LANG === 'en' ? R_EN[i] : Y.RESULT[i];
+  // 이름 뒤 조사: 받침이 있으면 '이', 없으면 '가' (영문 이름은 끝소리로 어림)
+  const KN = ['영', '한', '두', '세', '네'];
+  const ME = () => L('나', 'You');
+  function subj(n) { return n === '나' ? '내가' : ga(n); }            // 주어: 내가 / 청이 / 홍이
+  function poss(n) { return LANG === 'en' ? (n === 'You' ? 'your' : n + "'s") : (n === '나' ? '내' : n + '의'); } // 소유: 내 / 청의 / your / Red's
+  function ga(n) { n = String(n); const c = n.charCodeAt(n.length - 1); if (c >= 0xAC00 && c <= 0xD7A3) return n + ((c - 0xAC00) % 28 ? '이' : '가'); return n + (/[bcdfghjklmnpqrstvwxz]$/i.test(n) ? '이' : '가'); }
   function placeName(n) { return n === 0 ? L('집', 'off board') : n === Y.F ? L('완주', 'home') : n === 22 ? L('가운데', 'center') : n === Y.START ? L('출발점', 'start') : L(n + '칸', '#' + n); }
-  const RULES_URL = 'https://imlovenurlove-sys.github.io/yutdugi/how-to-play.html';
-  const PRIVACY_URL = 'https://imlovenurlove-sys.github.io/yutdugi/privacy-en.html';
+  const SITE_BASE = /github\.io$|^localhost$|^127\./.test(location.hostname) ? '' : 'https://imlovenurlove-sys.github.io/yutdugi/';
+  const EXT = SITE_BASE ? ' target="_blank" rel="noopener"' : '';
+  const RULES_URL = SITE_BASE + 'how-to-play.html';
+  const PRIVACY_URL = SITE_BASE + 'privacy-en.html';
+  document.querySelectorAll('a[data-site]').forEach(a => { a.href = SITE_BASE + a.dataset.site; if (!SITE_BASE) { a.removeAttribute('target'); a.removeAttribute('rel'); } });
   document.documentElement.lang = LANG;
   if (LANG === 'en') {
     document.title = 'Yutdugi — The Korean Stick Game You Win by Thinking';
@@ -746,33 +764,34 @@
       ['#lobby .lobby-head p', 'Flip a stick and think ahead.<br>No luck — just strategy.'],
       ['[data-mode=online] b', 'Play online'], ['[data-mode=online] b + span', 'Create a room and send the code to a friend'],
       ['[data-mode=ai] b', 'vs Computer'], ['[data-mode=ai] b + span', 'Play the computer · choose a level'],
-      ['[data-mode=hotseat] b', 'Two players'], ['[data-mode=hotseat] b + span', 'Take turns on one phone, face to face'],
-      ['#invite', '<b>You’re invited to room <span id="inviteCode"></span></b><span>Enter your name and tap Join.</span>'],
-      ['label[for=nick]', 'Your name'], ['#joinInvite', 'Join'], ['#mkRoom', 'Create room'], ['#joinRoomBtn', 'Join with a code'],
-      ['label[for=codeIn]', 'Room code (4 letters)'],
+      ['[data-mode=hotseat] b', 'Two players'], ['[data-mode=hotseat] b + span', 'Pass one phone back and forth'],
+      ['#invite', '<b>You’re invited to room <span id="inviteCode"></span></b><span>Enter a nickname and tap Join.</span>'],
+      ['label[for=nick]', 'Nickname'], ['#joinInvite', 'Join'], ['#mkRoom', 'Create room'], ['#joinRoomBtn', 'Join with a code'],
+      ['label[for=codeIn]', 'Room code (4 characters)'],
       ['label[for=n0]', 'Blue · moves first'], ['label[for=n1]', 'Red · moves second'],
       ['#aiOpts .field:nth-child(1) > label', 'Your side'],
       ['#sideSeg [data-v="0"]', 'Blue · first'], ['#sideSeg [data-v="1"]', 'Red · second'],
       ['#aiOpts .field:nth-child(2) > label', 'Computer level'],
       ['#lvSeg [data-v="1"]', 'Beginner'], ['#lvSeg [data-v="4"]', 'Normal'], ['#lvSeg [data-v="7"]', 'Expert'],
-      ['#ruleOpts label', 'Fair-start rule (choose sides after move 3)'],
-      ['#pieSeg [data-v="0"]', 'Off'], ['#pieSeg [data-v="1"]', 'Choose sides after move 3'],
+      ['#ruleOpts label', 'Fair start — after move 3, the second player may swap sides'],
+      ['#pieSeg [data-v="0"]', 'Off'], ['#pieSeg [data-v="1"]', 'On'],
       ['#startBtn', 'Start game'],
       ['#lobby [data-open=rules]', 'How to play'], ['#lobby [data-open=about]', 'About'],
-      ['#lobby .legal', '<a href="' + RULES_URL + '" target="_blank" rel="noopener">Illustrated rules</a> · <a href="' + PRIVACY_URL + '" target="_blank" rel="noopener">Privacy</a>'],
+      ['#lobby .legal', '<a href="' + RULES_URL + '"' + EXT + '>Illustrated rules</a> · <a href="' + PRIVACY_URL + '"' + EXT + '>Privacy</a>'],
       ['#room .eyebrow', 'Room code'], ['#room .room > .sub', 'Send this code to a friend, or share the link.'],
       ['#copyLink', 'Copy link'], ['#shareLink', 'Share'], ['#conn', 'Connecting…'],
-      ['#hostPanel label', 'Fair-start rule'], ['#pieSeg2 [data-v="0"]', 'Off'], ['#pieSeg2 [data-v="1"]', 'Choose sides after move 3'],
-      ['#roomStart', 'Waiting for a friend…'], ['#guestNote', 'The game starts when the host begins.'], ['#leaveRoom', 'Leave'],
+      ['#hostPanel label', 'Fair start — after move 3, the second player may swap sides'], ['#pieSeg2 [data-v="0"]', 'Off'], ['#pieSeg2 [data-v="1"]', 'On'],
+      ['#roomStart', 'Waiting for a friend…'], ['#emptySub', 'If your friend is about to join, you can keep waiting.'], ['#reCode', 'Re-enter code'], ['#guestNote', 'The game starts when the host begins.'], ['#leaveRoom', 'Leave'],
       ['#game .brand h2', 'Yutdugi'], ['#hintBtn', 'Hint'], ['#game [data-open=rules]', 'Rules'], ['#quitBtn', 'Quit'],
       ['#tag0', 'First'], ['#tag1', 'Second'],
       ['#pieKeep', 'Keep sides'], ['#pieSwap', 'Swap sides'],
       ['#result .eyebrow', 'Game over'],
-      ['#result .stat:nth-child(1) span', 'Moves'], ['#result .stat:nth-child(2) span', 'Captures'], ['#result .stat:nth-child(3) span', 'Stacks'],
-      ['#againBtn', 'Play again — swap who goes first'], ['#againNote', 'The next game starts when the host taps Play again.'], ['#toLobby', 'Main menu'],
+      ['#result .stat:nth-child(1) span', 'Moves'], ['#result .stat:nth-child(2) span', 'Captures'], ['#result .stat:nth-child(3) span', 'Stacks'], ['#rsNote', 'Both players combined'],
+      ['#againBtn', 'Rematch (swap first)'], ['#againNote', 'The next game starts when the host taps Play again.'], ['#toLobby', 'Main menu'],
       ['#mRules .sheet', `<button class="ghost close" data-close>Close</button>
   <h3>How to play Yutdugi</h3>
   <p>Nobody throws the sticks. Each player holds two sticks, and all four are read <b>together</b>.</p>
+  <div class="faces"></div>
   <div class="ladder"><span>Horse<small>0 flat</small></span><span class="arr">↔</span><span>Pig<small>1 flat</small></span><span class="arr">↔</span><span>Dog<small>2 flat</small></span><span class="arr">↔</span><span>Sheep<small>3 flat</small></span><span class="arr">↔</span><span>Cow<small>4 flat</small></span></div>
   <p style="text-align:center;font-size:12px">Count the sticks with the flat side up → that’s the result. Each flip moves the result <b>one step</b> along this ladder.</p>
   <ol>
@@ -786,17 +805,17 @@
   </ol>
   <p>Move 1 is always Pig and move 2 is always Dog. The real game starts with move 3.</p>
   <p>With the <b>fair-start rule</b> on, the first player makes move 3 (the first real choice), then the second player picks which side to take. A strong move gets taken away and a weak one gets kept, so the first player has to aim for balance.</p>
-  <p style="font-size:12px">The five results keep the animal names of Korea’s traditional stick game: pig, dog, sheep, cow and horse. <a href="${RULES_URL}" target="_blank" rel="noopener">Illustrated rules →</a></p>`],
+  <p style="font-size:12px">The five results keep the animal names of Korea’s traditional stick game: pig, dog, sheep, cow and horse. <a href="${RULES_URL}"${EXT}>Illustrated rules →</a></p>`],
       ['#mAbout .sheet', `<button class="ghost close" data-close>Close</button>
   <h3>About Yutdugi</h3>
-  <p>Yutdugi is a variant of Korea’s traditional stick-throwing board game (officially <i>Yunnori</i>, a National Intangible Cultural Heritage of Korea since 2022), with the luck taken out. Every stick is visible to both players, so, like chess or Go, it’s a game of <b>perfect information</b>.</p>
+  <p>Yutdugi is a variant of Korea’s traditional stick-throwing board game (officially <i>Yunnori</i>, often spelled “yut nori” — a National Intangible Cultural Heritage of Korea since 2022), with the luck taken out. Every stick is visible to both players, so, like chess or Go, it’s a game of <b>perfect information</b>.</p>
   <p>To play someone far away, create a room and send the code. You can also play two people on one device, or against the computer. Tap “Hint” to see the move the computer recommends.</p>
-  <p style="font-size:12px">Blue and Red pieces and the rainbow stripes of Korean holiday clothing; the sticks follow real ones — a flat side and a round side marked with X.</p>
-  <p style="font-size:12px">Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy</a></p>`],
+  <p style="font-size:12px">The blue and red pieces and the rainbow stripes come from traditional Korean holiday clothing; the sticks are modelled on real ones, with a flat side and a round side marked X.</p>
+  <p style="font-size:12px">Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="${PRIVACY_URL}"${EXT}>Privacy</a></p>`],
     ];
     H.forEach(([sel, html]) => document.querySelectorAll(sel).forEach(el => { el.innerHTML = html; }));
     const A = [
-      ['#nick', 'placeholder', 'e.g. Alex'], ['#codeIn', 'placeholder', 'e.g. K7PM'],
+      ['#nick', 'placeholder', 'e.g. StickMaster'], ['#codeIn', 'placeholder', 'e.g. K7PM'],
       ['.mode-list', 'aria-label', 'Game mode'], ['#board', 'aria-label', 'Board'],
     ];
     A.forEach(([sel, at, v]) => { const el = document.querySelector(sel); if (el) el.setAttribute(at, v); });
@@ -816,14 +835,15 @@
   })();
 
   // ---------- 로비 ----------
-  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
-  function setMode(m) {
-    S.mode = m;
+  document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode, true); const t = S.mode === 'online' ? (!$('#joinInvite').hidden ? $('#joinInvite') : $('#mkRoom')) : $('#startBtn'); const r = t.getBoundingClientRect(); if (r.bottom > innerHeight - 8) t.scrollIntoView({ block: 'end', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }));
+  function setMode(m, user) {
+    S.mode = m; if (user) store.set('mode', m); if (m === 'online' && typeof pingOnce === 'function') pingOnce();
     document.querySelectorAll('.mode').forEach(x => x.setAttribute('aria-pressed', x.dataset.mode === m));
     $('#onlineOpts').hidden = m !== 'online';
     $('#localOpts').hidden = m === 'online';
     $('#ruleOpts').hidden = m === 'online';
     $('#aiOpts').style.display = m === 'ai' ? '' : 'none';
+    $('#nameRow').hidden = m === 'ai';
     $('#startBtn').hidden = m === 'online';
   }
   function seg(id, cb) {
@@ -863,6 +883,7 @@
     return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg>`;
   }
   $('#lobbyPair').innerHTML = stickSVG(true) + stickSVG(false);
+  document.querySelectorAll('.faces').forEach(f => { f.innerHTML = `<figure>${stickSVG(true)}<figcaption>${L('<b>배</b>(평평한 면) — 셈에 들어가요', '<b>Flat side</b> — counts')}</figcaption></figure><figure>${stickSVG(false)}<figcaption>${L('<b>등</b>(X 표시) — 안 세요', '<b>Round side</b> (X) — doesn’t count')}</figcaption></figure>`; });
   $('#resPair').innerHTML = stickSVG(true) + stickSVG(false);
 
   function show(id, fromPop) {
@@ -894,6 +915,7 @@
       if (BIG.has(n)) h += `<circle cx="${x}" cy="${y}" r="5.6" class="node big"/><circle cx="${x}" cy="${y}" r="3.4" class="node inner"/>`;
       else h += `<circle cx="${x}" cy="${y}" r="3.4" class="node"/>`;
     }
+    for (const [x, y, r] of [[90, 50, -90], [50, 10, 180], [10, 50, 90], [50, 90, 0]]) h += `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-2.4 -2.2 L1.4 0 L-2.4 2.2" class="dir"/></g>`;
     h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">${L('출발 · 도착', 'Start · Home')}</text>`;
     for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<g class="target" data-node="${n}"><circle class="tv" cx="${x}" cy="${y}" r="6.2"/><circle class="hit" cx="${x}" cy="${y}" r="8"/></g>`; }
     for (let p = 0; p < 2; p++) for (let i = 0; i < 4; i++) {
@@ -911,7 +933,9 @@
       if (S.mode === 'ai') { S.human = 1 - S.human; setSeg('#sideSeg', S.human); }
       else { const a = $('#n0').value; $('#n0').value = $('#n1').value; $('#n1').value = a; }
     }
-    beginGame([$('#n0').value.trim() || L('청', 'Blue'), $('#n1').value.trim() || L('홍', 'Red')], { exactFinish: S.exact, pie: S.pie, pieces: S.pieces });
+    let names = [$('#n0').value.trim() || L('청', 'Blue'), $('#n1').value.trim() || L('홍', 'Red')];
+    if (S.mode === 'ai') { const lv = { 1: L('초심자', 'Beginner'), 4: L('보통', 'Normal'), 7: L('고수', 'Expert') }[S.depth] || ''; names = []; names[S.human] = L('나', 'You'); names[1 - S.human] = L('컴퓨터', 'Computer'); S.lvName = lv; }
+    beginGame(names, { exactFinish: S.exact, pie: S.pie, pieces: S.pieces });
   }
   function beginGame(names, cfg) {
     S.names = names;
@@ -993,7 +1017,7 @@
       const atHome = g.pieces[p].filter(pc => !pc.done && pc.idx === 0 && pc.route === 'OUTER').length;
       const done = g.pieces[p].filter(pc => pc.done).length;
       home.querySelector('.dots').innerHTML = Array.from({ length: atHome }, () => '<span class="pc"></span>').join('');
-      home.querySelector('.cnt').textContent = L(`집 ${atHome} · 난 말 ${done}`, `Waiting ${atHome} · Home ${done}`);
+      home.querySelector('.cnt').textContent = L(`대기 ${atHome} · 난 말 ${done}`, `Waiting ${atHome} · Home ${done}`);
     }
     const groups = {};
     for (let p = 0; p < 2; p++) for (let i = g.pieces[p].length; i < 4; i++) $('#pc' + p + i).classList.add('hidden'); // 3동 판: 4번째 말 자리는 비운다
@@ -1026,29 +1050,29 @@
       });
     }
     // 이름표: 온라인이면 내 편 표시
-    for (let p = 0; p < 2; p++) { $('#name' + p).textContent = S.names[p]; $('#tag' + p).textContent = (S.mode === 'online' && controls(p) ? L('나 · ', 'You · ') : '') + (p === 0 ? L('먼저', 'First') : L('나중', 'Second')); }
+    for (let p = 0; p < 2; p++) { $('#name' + p).textContent = S.names[p]; $('#tag' + p).textContent = (S.mode === 'online' && controls(p) ? L('나 · ', 'You · ') : '') + (p === 0 ? L('먼저', 'First') : L('나중', 'Second')) + (isAI(p) && S.lvName ? ' · ' + S.lvName : ''); }
     // 상태줄
     a11ySync();
     const who = $('#stWho'), msg = $('#stMsg'), big = $('#stBig');
     const KSTEP = LANG === 'en' ? ['', '1 space', '2 spaces', '3 spaces', '4 spaces', '5 spaces'] : ['', '한 칸', '두 칸', '세 칸', '네 칸', '다섯 칸'];
-    if (g.winner != null) { who.textContent = L('판 끝', 'Game over'); msg.textContent = g.winner === -1 ? L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부', 'Draw — every legal move would repeat a position a third time') : L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`); big.innerHTML = g.winner === -1 ? L('반', '½') : L('끝', 'End'); return; }
-    who.textContent = L(`${S.names[cur]}의 차례 · ${g.ply + 1}수`, `${S.names[cur]}'s turn · move ${g.ply + 1}`);
+    if (g.winner != null) { who.textContent = L('판 끝', 'Game over'); msg.textContent = g.winner === -1 ? L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부', 'Draw — every legal move would repeat a position a third time') : L(`${S.names[g.winner]} 승!`, `${S.names[g.winner] === 'You' ? 'You win' : S.names[g.winner] + ' wins'}!`); big.innerHTML = g.winner === -1 ? L('반', '½') : L('끝', 'End'); return; }
+    who.textContent = L(`${poss(S.names[cur])} 차례 · ${g.ply + 1}수`, `${S.names[cur] === 'You' ? 'Your' : S.names[cur] + "'s"} turn · move ${g.ply + 1}`);
     if (paused) {
-      msg.textContent = controls(1) ? L('셋째 수를 보고 편을 골라요.', 'Look at move 3 and choose your side.') : L(`${S.names[1]}이(가) 편을 고르는 중…`, `${S.names[1]} is choosing a side…`);
+      msg.textContent = controls(1) ? L('셋째 수를 보고 편을 골라요.', 'Look at move 3 and choose your side.') : L(`${ga(S.names[1])} 편을 고르는 중…`, `${S.names[1]} is choosing a side…`);
       big.innerHTML = `${R(Y.countUp(g.sticks))}<small>${L('지금', 'now')}</small>`;
     } else if (!flipped) {
       const sc = Y.stickChoices(g);
       const fo = sc.filter(x => x.ok).filter((x, i, a) => a.findIndex(y => y.result === x.result) === i);
       const blocked = sc.some(x => !x.ok);
       if (isAI(cur)) msg.textContent = L('컴퓨터가 수를 읽는 중…', 'The computer is thinking…');
-      else if (!controls(cur)) msg.textContent = L(`${S.names[cur]}이(가) 가락을 고르는 중…`, `${S.names[cur]} is choosing a stick…`);
+      else if (!controls(cur)) msg.textContent = L(`${ga(S.names[cur])} 가락을 고르는 중…`, `${S.names[cur]} is choosing a stick…`);
       else if (g.ply === 0) msg.textContent = L('첫 수는 도예요. 가락 하나를 톡 눌러 뒤집어요.', 'Move 1 is always Pig (1). Tap a stick to flip it.');
       else if (g.ply === 1) msg.textContent = L('둘째 수는 개예요. 가락 하나를 톡 눌러 뒤집어요.', 'Move 2 is always Dog (2). Tap a stick to flip it.');
       else if (fo.length === 1) msg.textContent = blocked ? L(`${R(fo[0].result)}만 둘 수 있어요 — 다른 쪽은 같은 판이 세 번째가 돼요(반복 금지).`, `Only ${R(fo[0].result)} is allowed — the other stick would repeat a position a third time (no-repeat rule).`) : L(`어느 가락을 뒤집어도 ${R(fo[0].result)}. 가락을 눌러요.`, `Either stick gives ${R(fo[0].result)}. Tap a stick.`);
       else msg.textContent = L(`${R(fo[0].result)} 또는 ${R(fo[1].result)} — 가락을 골라 뒤집어요.`, `${R(fo[0].result)} or ${R(fo[1].result)} — choose a stick to flip.`);
-      big.innerHTML = `${R(Y.countUp(g.sticks))}<small>${L('지금', 'now')}</small>`;
+      big.innerHTML = `?<small>${L('뒤집기', 'flip')}</small>`;
     } else {
-      msg.textContent = controls(cur) ? L(`${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.`, `Move ${KSTEP[Y.STEPS[g.result]]}. Tap the piece to move.`) + (choices.some(o => !o.ok) ? L(' (막힌 말은 반복 금지)', ' (some pieces are blocked by the no-repeat rule)') : '') : L(`${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]}이(가) 말을 옮겨요.`, `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]} is moving a piece.`);
+      msg.textContent = controls(cur) ? L(`${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.`, `Move ${KSTEP[Y.STEPS[g.result]]}. Tap the piece to move.`) + (choices.some(o => o.ok && o.from === 0) && g.pieces[cur].some(pc => !pc.done && Y.nodeOf(pc) === 0) ? L(' 새 말은 대기 칸을 눌러요.', ' For a new piece, tap the Waiting box.') : '') + (choices.some(o => !o.ok) ? L(' (막힌 말은 반복 금지)', ' (some pieces are blocked by the no-repeat rule)') : '') : L(`${KSTEP[Y.STEPS[g.result]]} — ${ga(S.names[cur])} 말을 옮겨요.`, `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]} is moving a piece.`);
       big.innerHTML = `${R(g.result)}!<small>${L(Y.STEPS[g.result] + '칸', KSTEP[Y.STEPS[g.result]])}</small>`;
     }
     if (S.mode === 'online' && S.oppAway && g.winner == null) msg.textContent = L('상대 연결이 끊겼어요. 돌아오면 이어서 둬요.', 'Your opponent disconnected. Play resumes when they return.');
@@ -1098,8 +1122,8 @@
     if (opt.stacks.length) S.stats.stack++;
     addLog(g.turn, g.result, opt);
     render();
-    if (opt.captures.length) toast(L(`${S.names[g.turn]}이(가) ${S.names[1 - g.turn]}의 말 ${opt.captures.length}동을 잡았어요!`, `${S.names[g.turn]} captured ${opt.captures.length} ${S.names[1 - g.turn]} piece${opt.captures.length > 1 ? 's' : ''}!`));
-    else if (opt.to === Y.F) toast(L(`${S.names[g.turn]} 말 ${opt.ids.length + opt.stacks.length}동이 났어요!`, `${S.names[g.turn]} brought ${opt.ids.length + opt.stacks.length} piece${opt.ids.length + opt.stacks.length > 1 ? 's' : ''} home!`));
+    if (opt.captures.length) { const k = opt.captures.length; toast(L(`${subj(S.names[g.turn])} ${poss(S.names[1 - g.turn])} 말 ${KN[k] || k} 동을 잡았어요!`, `${S.names[g.turn]} captured ${k === 1 ? 'one' : k} of ${poss(S.names[1 - g.turn])} pieces!`)); }
+    else if (opt.to === Y.F) { const k = opt.ids.length + opt.stacks.length; toast(L(`${poss(S.names[g.turn])} 말 ${KN[k] || k} 동이 났어요!`, `${S.names[g.turn]} brought ${k === 1 ? 'a piece' : k + ' pieces'} home!`)); }
     if (S.g.winner != null) { later(showResult, 1200); return; }
     // 공평 규칙: 셋째 수 뒤 나중 편이 편을 고른다
     if (S.pieState === 'wait' && S.g.ply === 3) { S.pieState = 'ask'; pieAsk(); return; }
@@ -1114,7 +1138,7 @@
       later(() => { const swap = Y.valueOf(S.g, Math.max(S.depth, 4), 0) > Y.valueOf(S.g, Math.max(S.depth, 4), 1); pieDecide(swap, false); }, 700);
       return;
     }
-    if (controls(1)) { panel.hidden = false; $('#pieMsg').textContent = L(`${S.names[0]}이(가) 셋째 수를 뒀어요. 지금 판을 보고 청(먼저)과 홍(나중) 중 어느 편을 가질지 골라요.`, `${S.names[0]} has played move 3. Look at the board and choose your side: Blue (moves first) or Red (moves second).`); }
+    if (controls(1)) { panel.hidden = false; $('#pieMsg').textContent = L(`${ga(S.names[0])} 셋째 수를 뒀어요. 지금 판을 보고 청(먼저)과 홍(나중) 중 어느 편을 가질지 골라요.`, `${S.names[0]} has played move 3. Look at the board and choose your side: Blue (moves first) or Red (moves second).`); }
     else panel.hidden = true;
   }
   function pieDecide(swap, remote) {
@@ -1138,6 +1162,7 @@
     const line = document.createElement('div');
     line.innerHTML = `${S.g.ply}. <b>${esc(S.names[p])}</b> ${R(r)} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
     $('#log').prepend(line);
+    if (!controls(p) && opt.to !== Y.F) later(() => { const i = S.g.pieces[p].findIndex(pc => !pc.done && Y.nodeOf(pc) === opt.to); if (i >= 0) glow($('#pc' + p + i)); }, 450);
   }
 
   // ---------- 컴퓨터 ----------
@@ -1152,28 +1177,43 @@
     }, 500);
   }
 
+  function glow(el) { if (!el) return; el.classList.remove('hinted'); void el.getBoundingClientRect(); el.classList.add('hinted'); later(() => el.classList.remove('hinted'), 2600); }
+  function glowMove(p, from, to) {
+    if (from === 0) glow($('#home' + p));
+    else { const i = S.g.pieces[p].findIndex(pc => !pc.done && Y.nodeOf(pc) === from); if (i >= 0) glow($('#pc' + p + i)); }
+    if (to !== Y.F) glow(document.querySelector(`#board .target[data-node="${to}"]`));
+  }
   function hint() {
     const g = S.g; if (!g || g.winner != null || !controls(g.turn) || S.busy || S.pieState === 'ask') return;
     if (g.pending) {
       const opts = Y.moveChoices(g).filter(o => o.ok);
       let best = null, bv = -Infinity;
       opts.forEach(o => { const v = Y.evaluate(o.next, g.turn); if (v > bv) { bv = v; best = o; } });
-      toast(L(`훈수: ${best.from === 0 ? '새 말을 내보내요' : best.from + '칸의 말을 옮겨요'}`, `Hint: ${best.from === 0 ? 'enter a new piece' : 'move the piece on #' + best.from}`));
+      glowMove(g.turn, best.from, best.to);
+      toast(L(`훈수: 반짝이는 ${best.from === 0 ? '새 말을 내보내요' : '말을 옮겨요'}${best.to === Y.F ? ' (완주!)' : best.captures.length ? ' (잡기!)' : ''}`, `Hint: ${best.from === 0 ? 'enter a new piece' : 'move the glowing piece'}${best.to === Y.F ? ' (it gets home!)' : best.captures.length ? ' (capture!)' : ''}`));
     } else {
       const m = Y.bestMove(g, Math.max(S.depth, 4), 900);
       const stick = $(`#sticks${g.turn} .stick[data-s="${m.stick}"]`);
       stick.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 500, iterations: 2 });
-      toast(L(`훈수: ${m.stick + 1}번 가락을 뒤집어 ${R(m.result)} → ${m.from === 0 ? '새 말' : m.from + '칸 말'}을 ${m.to === Y.F ? '완주' : m.to + '칸으로'}${m.captures.length ? ' (잡기)' : ''}`, `Hint: flip stick ${m.stick + 1} for ${R(m.result)} → move ${m.from === 0 ? 'a new piece' : 'the piece on #' + m.from} ${m.to === Y.F ? 'home' : 'to #' + m.to}${m.captures.length ? ' (capture)' : ''}`));
+      glowMove(g.turn, m.from, m.to);
+      toast(L(`훈수: 통통 튀는 가락을 뒤집어 ${R(m.result)} → 반짝이는 ${m.from === 0 ? '새 말' : '말'}${m.captures.length ? ' (잡기!)' : ''}`, `Hint: flip the bouncing stick for ${R(m.result)}, then move the glowing ${m.from === 0 ? 'new piece' : 'piece'}${m.captures.length ? ' (capture!)' : ''}`));
     }
   }
 
+
   function showResult() {
+    { const t = $('#toast'); t.style.transition = 'none'; t.classList.remove('on'); void t.offsetWidth; t.style.transition = ''; }
     const g = S.g;
     $('#resTitle').className = g.winner === -1 ? 'draw' : 'p' + g.winner;
     if (g.winner === -1) { $('#resTitle').textContent = L('무승부', 'Draw'); $('#resSub').textContent = L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들었어요.', 'Every legal move would have repeated a position a third time.'); }
-    else {
+    else if (S.mode === 'ai') {
+      const won = g.winner === S.human;
+      $('#resTitle').textContent = won ? L('이겼어요!', 'You win!') : L('컴퓨터 승', 'The computer wins');
+      $('#resSub').textContent = won ? L('네 동을 모두 먼저 냈어요. 잘했어요!', 'You brought all four pieces home first. Well played!') : L('컴퓨터가 네 동을 모두 먼저 냈어요. 한 판 더?', 'It brought all four pieces home first. Try again?');
+    } else {
       const mine = S.mode === 'online' ? (controls(g.winner) ? L(' 내가 이겼어요!', ' You won!') : (S.sides && S.sides[S.myId] != null ? L(' 다음 판엔 꼭…', ' Next time…') : '')) : '';
-      $('#resTitle').textContent = L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`); $('#resSub').textContent = L(`${S.names[g.winner]}이(가) ${g.npieces === 3 ? '세' : '네'} 동을 모두 내보냈어요.`, `${S.names[g.winner]} brought all ${g.npieces} pieces home.`) + mine;
+      $('#resTitle').textContent = L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`);
+      $('#resSub').textContent = L(`${subj(S.names[g.winner])} 네 동을 모두 내보냈어요.`, `${S.names[g.winner]} brought all four pieces home.`) + mine;
     }
     $('#rsPly').textContent = g.ply; $('#rsCap').textContent = S.stats.cap; $('#rsStack').textContent = S.stats.stack;
     $('#againBtn').hidden = S.mode === 'online' && !S.isHost;
@@ -1193,7 +1233,6 @@
 
   $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast(L('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.', 'Could not load the online module. Please refresh.')); enterRoom(makeCode(), true); });
   $('#joinInvite').addEventListener('click', () => {
-    if (!($('#nick').value || '').trim()) { $('#nick').focus(); return toast(L('이름을 먼저 적어 주세요', 'Please enter your name first')); }
     const code = S.invite; if (!code) return; S.invite = null;
     $('#invite').hidden = true; $('#joinInvite').hidden = true; $('#mkRoom').hidden = false; $('#joinRoomBtn').parentElement.hidden = false; document.querySelector('.mode-list').hidden = false;
     enterRoom(code, false);
@@ -1201,6 +1240,7 @@
   $('#joinRoomBtn').addEventListener('click', () => { $('#joinField').hidden = false; $('#codeIn').focus(); });
   $('#codeIn').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); e.target.value = v; if (v.length === 4) enterRoom(v, false); });
   $('#leaveRoom').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); });
+  $('#reCode').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); setMode('online'); $('#joinField').hidden = false; $('#codeIn').value = ''; $('#codeIn').focus(); });
   $('#roomStart').addEventListener('click', () => hostStart(false));
   $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(roomLink()); toast(L('링크를 복사했어요', 'Link copied')); } catch (e) { toast(roomLink()); } });
   $('#shareLink').addEventListener('click', async () => {
@@ -1243,6 +1283,7 @@
     S.joinTs = +tabStore.get('ts:' + code) || Date.now(); tabStore.set('ts:' + code, S.joinTs); // 새로고침해도 들어온 순서(방장)를 지킨다
     S.oppAway = false; S.roster = {};
     S.sides = null; S.peers = [];
+    if (!host) S.emptyT = setTimeout(() => { if (S.room === code && S.net && S.peers.length < 2 && !S.g) { $('#emptyMsg').textContent = L(`방 ${code}에 아직 아무도 없어요. 코드가 맞는지 확인해 주세요.`, `No one is in room ${code} yet. Please check the code.`); $('#emptyNote').hidden = false; } }, 8000);
     history.replaceState(null, '', location.pathname + '?room=' + code); // 새로고침하면 같은 방으로 돌아온다
     $('#roomCode').textContent = code; $('#players').innerHTML = ''; $('#hostPanel').hidden = !host; $('#guestNote').hidden = host;
     setConn(L('연결 중…', 'Connecting…'));
@@ -1302,7 +1343,7 @@
     for (let i = a.length; i < b.length; i++) if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
     return true;
   }
-  function leaveNet() { clearInterval(beat); S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
+  function leaveNet() { clearInterval(beat); clearTimeout(S.emptyT); $('#emptyNote').hidden = true; S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
   function forgetRoom() { if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
   function renderRoom() {
     const box = $('#players');
@@ -1312,6 +1353,7 @@
     box.innerHTML = rows.join('');
     $('#hostPanel').hidden = !S.isHost; $('#guestNote').hidden = S.isHost;
     const ready = S.peers.length >= 2;
+    if (ready) $('#emptyNote').hidden = true;
     $('#roomStart').disabled = !ready; $('#roomStart').textContent = ready ? L('판 벌이기', 'Start game') : L('친구를 기다리는 중…', 'Waiting for a friend…');
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -1338,7 +1380,7 @@
 
   // ---------- 시작 ----------
   buildBoard();
-  if (SUPA_URL) { try { fetch(SUPA_URL + '/rest/v1/rpc/ping', { method: 'POST', headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {}); } catch (e) {} }
+  function pingOnce() { if (S.pinged || !SUPA_URL) return; S.pinged = true; try { fetch(SUPA_URL + '/rest/v1/rpc/ping', { method: 'POST', headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {}); } catch (e) {} }
   const saved = store.get('nick'); if (saved) $('#nick').value = saved;
   const qs = new URLSearchParams(location.search);
   const rq = (qs.get('room') || '').toUpperCase();
@@ -1352,7 +1394,7 @@
     }
   }
   else if (!SUPA_URL) { document.querySelector('.mode[data-mode="online"]').hidden = true; setMode('ai'); }
-  else setMode('online');
+  else setMode(['online', 'ai', 'hotseat'].includes(store.get('mode')) ? store.get('mode') : 'ai');
 })();
 </script>
 </body></html>
