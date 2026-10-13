@@ -917,9 +917,9 @@
     }
     for (const [x, y, r] of [[90, 50, -90], [50, 10, 180], [10, 50, 90], [50, 90, 0]]) h += `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-2.4 -2.2 L1.4 0 L-2.4 2.2" class="dir"/></g>`;
     h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">${L('출발 · 도착', 'Start · Home')}</text>`;
-    for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<g class="target" data-node="${n}"><circle class="tv" cx="${x}" cy="${y}" r="6.2"/><circle class="hit" cx="${x}" cy="${y}" r="8"/></g>`; }
+    for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<g class="target" data-node="${n}"><circle class="tv" cx="${x}" cy="${y}" r="6.2"/><circle class="hit" cx="${x}" cy="${y}" r="8.6"/></g>`; }
     for (let p = 0; p < 2; p++) for (let i = 0; i < 4; i++) {
-      h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="hit" r="8"/><circle class="ring" r="5.2"/><circle class="body" r="3.7"/><text class="cnt"></text></g>`;
+      h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="hit" r="8.6"/><circle class="ring" r="5.2"/><circle class="body" r="3.7"/><text class="cnt"></text></g>`;
     }
     svg.innerHTML = h;
     svg.querySelectorAll('.target').forEach(t => t.addEventListener('click', () => onTarget(+t.dataset.node)));
