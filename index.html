@@ -1087,7 +1087,7 @@
   }
   function doFlip(s, remote) {
     S.g = Y.flip(S.g, s);
-    if (!remote) send('flip', { ply: S.g.ply, stick: s });
+    if (!remote) send('flip', { ply: S.g.ply, stick: s, fp: fp(S.g) });
     render();
     const opts = Y.moveChoices(S.g).filter(o => o.ok);
     if (!remote && opts.length === 1) { S.busy = true; later(() => { S.busy = false; doMove(opts[0].from, false); }, 650); }
@@ -1117,7 +1117,7 @@
     const opt = Y.moveChoices(g).find(o => o.from === from);
     if (!opt || !opt.ok) { if (remote) requestSync(); return; }
     S.g = opt.next;
-    if (!remote) send('move', { ply: S.g.ply, node: from });
+    if (!remote) send('move', { ply: S.g.ply, node: from, fp: fp(S.g) });
     if (opt.captures.length) S.stats.cap++;
     if (opt.stacks.length) S.stats.stack++;
     addLog(g.turn, g.result, opt);
@@ -1304,19 +1304,23 @@
       onStart(payload);
     });
     ch.on('broadcast', { event: 'flip' }, ({ payload }) => {
+      if (payload.from === S.myId) return forgedAsMe();
       touch(payload.from);
       if (!S.g || !actsFor(payload.from, S.g.turn)) return;
       if (S.g.pending || payload.ply !== S.g.ply) return requestSync();
-      try { doFlip(payload.stick, true); } catch (e) { requestSync(); }
+      try { doFlip(payload.stick, true); } catch (e) { return requestSync(); }
+      if (payload.fp && payload.fp !== fp(S.g)) requestSync();
     });
     ch.on('broadcast', { event: 'move' }, ({ payload }) => {
+      if (payload.from === S.myId) return forgedAsMe();
       touch(payload.from);
       if (!S.g || !actsFor(payload.from, S.g.turn)) return;
       if (!S.g.pending || payload.ply !== S.g.ply + 1) return requestSync();
       doMove(payload.node, true);
+      if (payload.fp && payload.fp !== fp(S.g)) requestSync();
     });
-    ch.on('broadcast', { event: 'pie' }, ({ payload }) => { if (S.pieState === 'ask' && actsFor(payload.from, 1)) pieDecide(!!payload.swap, true); });
-    ch.on('broadcast', { event: 'hello' }, ({ payload }) => { heard(payload.from, payload.name, payload.ts); send('here', { name: myName(), ts: S.joinTs }); if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie, pieces: S.pieces }, pieState: S.pieState, stats: S.stats }); });
+    ch.on('broadcast', { event: 'pie' }, ({ payload }) => { if (payload.from === S.myId) return forgedAsMe(); if (S.pieState === 'ask' && actsFor(payload.from, 1)) pieDecide(!!payload.swap, true); });
+    ch.on('broadcast', { event: 'hello' }, ({ payload }) => { heard(payload.from, payload.name, payload.ts); send('here', { name: myName(), ts: S.joinTs }); shareState(); });
     ch.on('broadcast', { event: 'state' }, ({ payload }) => {
       if (!acceptState(payload)) return;
       S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
@@ -1338,18 +1342,28 @@
       else if (status === 'CLOSED') { S.connected = false; setConn(L('연결 종료', 'Connection closed'), true); }
     });
   }
-  function requestSync() { send('hello', { name: myName(), ts: S.joinTs }); }
+  function requestSync() { send('hello', { name: myName(), ts: S.joinTs }); shareState(); }
   // 이 사람이 side편의 수를 둘 자격이 있나: 대국 때 정해진 편과 일치해야 하고, 나를 사칭한 신호는 버린다
   function actsFor(from, side) { return !!from && from !== S.myId && !!S.sides && S.sides[from] === side; }
   // 받은 판 상태를 믿어도 되나: 대국 중인 사람은 '내 기록을 그대로 잇고, 상대 수만 덧붙인' 상태만 받는다
+  // 판 지문: 두 사람의 판이 같은지 비교하는 데 쓴다
+  function fp(g) { return g ? g.ply + '|' + JSON.stringify(g.sticks) + '|' + JSON.stringify(g.pieces) + '|' + (g.pending ? JSON.stringify(g.pending) : '') : ''; }
+  function shareState() { if (S.g && S.sides && S.sides[S.myId] != null) send('state', { g: S.g, sides: S.sides, names: S.names, cfg: { exactFinish: S.exact, pie: S.pie, pieces: S.pieces }, pieState: S.pieState, stats: S.stats }); }
+  // 누군가 '나'를 사칭했다: 내 판을 다시 알려 상대 판을 바로잡게 한다 (잦은 반복은 묶어서)
+  function forgedAsMe() { if (S.forgeT) return; S.forgeT = setTimeout(() => { S.forgeT = null; }, 1500); shareState(); }
+  // 상대가 보낸 판을 받아들일지: 대국자가 보냈고, '내 수'는 한 수도 바뀌지 않았으며, 내 판보다 뒤처지지 않을 때만
   function acceptState(pl) {
     if (!pl || !pl.g || !pl.sides) return false;
     if (!S.g || $('#game').hidden || !S.sides || S.sides[S.myId] == null) return true; // 새로 들어왔거나 새로고침했거나 구경꾼
-    if (S.g.ply >= pl.g.ply) return false;
+    if (!pl.from || pl.from === S.myId || S.sides[pl.from] == null) return false;
+    if (JSON.stringify(pl.sides) !== JSON.stringify(S.sides)) return false;
     const mine = S.sides[S.myId], a = S.g.history, b = pl.g.history || [];
-    for (let i = 0; i < a.length; i++) if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) return false;
-    for (let i = a.length; i < b.length; i++) if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
-    return true;
+    if (b.length < a.length) return false; // 옛 판
+    for (let i = 0; i < b.length; i++) {
+      if (i < a.length) { if (a[i].p === mine && JSON.stringify(a[i]) !== JSON.stringify(b[i])) return false; }
+      else if (b[i].p === mine) return false; // 내가 두지 않은 '내 수'
+    }
+    return fp(pl.g) !== fp(S.g);
   }
   function leaveNet() { if (beat) beat.stop(); beat = null; clearTimeout(S.emptyT); $('#emptyNote').hidden = true; S.oppAway = false; S.roster = {}; if (S.net) { try { send('bye', {}); client.removeChannel(S.net); } catch (e) {} S.net = null; } S.connected = false; }
   function forgetRoom() { if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
