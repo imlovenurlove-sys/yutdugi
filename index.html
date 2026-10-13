@@ -235,6 +235,9 @@
   .ladder .arr { color: var(--ink-3); font-size: 14px; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
   .toast.on { opacity: 1; }
+  html[lang=en] .status .big { font-size: 30px; } html[lang=en] .status .big small { letter-spacing: .02em; }
+  @media (max-height: 700px) { html[lang=en] .status .big { font-size: 26px; } }
+  html[lang=en] .topbar .tools .ghost { padding-left: 10px; padding-right: 10px; }
   @media (prefers-reduced-motion: reduce) { .stick .face, .piece { transition: none; } .piece.can circle.ring { animation: none; } }
 
 
@@ -289,7 +292,7 @@
       </div>
     </div>
     <button class="primary" id="startBtn">판 벌이기</button>
-    <div class="foot"><button class="ghost" data-open="rules">놀이법</button><button class="ghost" data-open="about">이 판에 대하여</button></div>
+    <div class="foot"><button class="ghost" data-open="rules">놀이법</button><button class="ghost" data-open="about">이 판에 대하여</button><button class="ghost" id="langBtn" lang="en">English</button></div>
     <p class="legal"><a href="https://imlovenurlove-sys.github.io/yutdugi/privacy.html" target="_blank" rel="noopener">개인정보 안내</a></p>
   </section>
 
@@ -702,6 +705,99 @@
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   const tabStore = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
 
+  // ---------- 언어 (한국어 / English) ----------
+  // ?lang=en|ko > 저장한 선택 > 브라우저 언어(한국어면 한국어, 아니면 영어)
+  const LANG = (() => {
+    let q = null; try { q = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+    if (q === 'en' || q === 'ko') { store.set('lang', q); return q; }
+    const sv = store.get('lang'); if (sv === 'en' || sv === 'ko') return sv;
+    return /^ko/i.test(navigator.language || '') ? 'ko' : 'en';
+  })();
+  const L = (ko, en) => LANG === 'en' ? en : ko;
+  // 도·개·걸·윷·모의 본뜻(돼지·개·양·소·말)을 영어 이름으로 쓴다
+  const R_EN = ['Horse', 'Pig', 'Dog', 'Sheep', 'Cow'];
+  const R = i => LANG === 'en' ? R_EN[i] : Y.RESULT[i];
+  function placeName(n) { return n === 0 ? L('집', 'off board') : n === Y.F ? L('완주', 'home') : n === 22 ? L('가운데', 'center') : n === Y.START ? L('출발점', 'start') : L(n + '칸', '#' + n); }
+  const RULES_URL = 'https://imlovenurlove-sys.github.io/yutdugi/how-to-play.html';
+  const PRIVACY_URL = 'https://imlovenurlove-sys.github.io/yutdugi/privacy.html';
+  document.documentElement.lang = LANG;
+  if (LANG === 'en') {
+    document.title = 'Yutdugi — The Korean Stick Game You Win by Thinking';
+    const H = [
+      ['#lobby .eyebrow', 'The Korean stick game — no throwing'],
+      ['#lobby h1', 'Yutdugi'],
+      ['#lobby .lobby-head p', 'Flip a stick and think ahead.<br>No luck — just strategy.'],
+      ['[data-mode=online] b', 'Play online'], ['[data-mode=online] b + span', 'Create a room and send the code to a friend'],
+      ['[data-mode=ai] b', 'vs Computer'], ['[data-mode=ai] b + span', 'Play the computer · choose a level'],
+      ['[data-mode=hotseat] b', 'Two players'], ['[data-mode=hotseat] b + span', 'Take turns on one phone, face to face'],
+      ['#invite', '<b>You’re invited to room <span id="inviteCode"></span></b><span>Enter your name and tap Join.</span>'],
+      ['label[for=nick]', 'Your name'], ['#joinInvite', 'Join'], ['#mkRoom', 'Create room'], ['#joinRoomBtn', 'Join with a code'],
+      ['label[for=codeIn]', 'Room code (4 letters)'],
+      ['label[for=n0]', 'Blue · moves first'], ['label[for=n1]', 'Red · moves second'],
+      ['#aiOpts .field:nth-child(1) > label', 'Your side'],
+      ['#sideSeg [data-v="0"]', 'Blue · first'], ['#sideSeg [data-v="1"]', 'Red · second'],
+      ['#aiOpts .field:nth-child(2) > label', 'Computer level'],
+      ['#lvSeg [data-v="1"]', 'Beginner'], ['#lvSeg [data-v="4"]', 'Normal'], ['#lvSeg [data-v="7"]', 'Expert'],
+      ['#ruleOpts label', 'Fair-start rule (choose sides after move 3)'],
+      ['#pieSeg [data-v="0"]', 'Off'], ['#pieSeg [data-v="1"]', 'Choose sides after move 3'],
+      ['#startBtn', 'Start game'],
+      ['#lobby [data-open=rules]', 'How to play'], ['#lobby [data-open=about]', 'About'],
+      ['#lobby .legal', '<a href="' + RULES_URL + '" target="_blank" rel="noopener">Illustrated rules</a> · <a href="' + PRIVACY_URL + '" target="_blank" rel="noopener">Privacy notice (Korean)</a>'],
+      ['#room .eyebrow', 'Room code'], ['#room .room > .sub', 'Send this code to a friend, or share the link.'],
+      ['#copyLink', 'Copy link'], ['#shareLink', 'Share'], ['#conn', 'Connecting…'],
+      ['#hostPanel label', 'Fair-start rule'], ['#pieSeg2 [data-v="0"]', 'Off'], ['#pieSeg2 [data-v="1"]', 'Choose sides after move 3'],
+      ['#roomStart', 'Waiting for a friend…'], ['#guestNote', 'The game starts when the host begins.'], ['#leaveRoom', 'Leave'],
+      ['#game .brand h2', 'Yutdugi'], ['#hintBtn', 'Hint'], ['#game [data-open=rules]', 'Rules'], ['#quitBtn', 'Quit'],
+      ['#tag0', 'First'], ['#tag1', 'Second'],
+      ['#pieKeep', 'Keep sides'], ['#pieSwap', 'Swap sides'],
+      ['#result .eyebrow', 'Game over'],
+      ['#result .stat:nth-child(1) span', 'Moves'], ['#result .stat:nth-child(2) span', 'Captures'], ['#result .stat:nth-child(3) span', 'Stacks'],
+      ['#againBtn', 'Play again — swap who goes first'], ['#againNote', 'The next game starts when the host taps Play again.'], ['#toLobby', 'Main menu'],
+      ['#mRules .sheet', `<button class="ghost close" data-close>Close</button>
+  <h3>How to play Yutdugi</h3>
+  <p>Nobody throws the sticks. Each player holds two sticks, and all four are read <b>together</b>.</p>
+  <div class="ladder"><span>Horse<small>0 flat</small></span><span class="arr">↔</span><span>Pig<small>1 flat</small></span><span class="arr">↔</span><span>Dog<small>2 flat</small></span><span class="arr">↔</span><span>Sheep<small>3 flat</small></span><span class="arr">↔</span><span>Cow<small>4 flat</small></span></div>
+  <p style="text-align:center;font-size:12px">Count the sticks with the flat side up → that’s the result. Each flip moves the result <b>one step</b> along this ladder.</p>
+  <ol>
+    <li>On your turn you must flip <b>exactly one of your own sticks</b> — not none, not both.</li>
+    <li>Read all four sticks and move one piece: Pig 1 · Dog 2 · Sheep 3 · Cow 4 · Horse 5 spaces.</li>
+    <li>Land on an opponent’s piece to capture it (it goes back off the board). Land on your own piece to stack them — they travel together.</li>
+    <li><b>No extra turns</b> — not for a capture, not for Cow or Horse. Play always passes.</li>
+    <li>Stop <b>exactly</b> on a corner or the center and your next move takes the shortcut. Pass over it and you stay on the outer path.</li>
+    <li>Landing exactly on the start corner is not enough — a piece must go <b>past</b> it to get home. Bring all four pieces home to win.</li>
+    <li><b>No repeats</b> — you may not make a move that creates the same position (pieces, sticks and turn) for the <b>third time</b>, like ko in Go. The game is a draw only if every legal move would do that.</li>
+  </ol>
+  <p>Move 1 is always Pig and move 2 is always Dog. The real game starts with move 3.</p>
+  <p>With the <b>fair-start rule</b> on, the first player makes move 3 (the first real choice), then the second player picks which side to take. A strong move gets taken away and a weak one gets kept, so the first player has to aim for balance.</p>
+  <p style="font-size:12px">The five results keep the animal names of Korea’s traditional stick game: pig, dog, sheep, cow and horse. <a href="${RULES_URL}" target="_blank" rel="noopener">Illustrated rules →</a></p>`],
+      ['#mAbout .sheet', `<button class="ghost close" data-close>Close</button>
+  <h3>About Yutdugi</h3>
+  <p>Yutdugi is a variant of Korea’s traditional stick-throwing board game (officially <i>Yunnori</i>, a National Intangible Cultural Heritage of Korea since 2022), with the luck taken out. Every stick is visible to both players, so, like chess or Go, it’s a game of <b>perfect information</b>.</p>
+  <p>To play someone far away, create a room and send the code. You can also play two people on one device, or against the computer. Tap “Hint” to see the move the computer recommends.</p>
+  <p style="font-size:12px">Blue and Red pieces and the rainbow stripes of Korean holiday clothing; the sticks follow real ones — a flat side and a round side marked with X.</p>
+  <p style="font-size:12px">Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="${PRIVACY_URL}" target="_blank" rel="noopener">Privacy notice (Korean)</a></p>`],
+    ];
+    H.forEach(([sel, html]) => document.querySelectorAll(sel).forEach(el => { el.innerHTML = html; }));
+    const A = [
+      ['#nick', 'placeholder', 'e.g. Alex'], ['#codeIn', 'placeholder', 'e.g. K7PM'],
+      ['.mode-list', 'aria-label', 'Game mode'], ['#board', 'aria-label', 'Board'],
+    ];
+    A.forEach(([sel, at, v]) => { const el = document.querySelector(sel); if (el) el.setAttribute(at, v); });
+    document.querySelectorAll('[data-close]').forEach(b => { if (b.textContent.trim() === '닫기') b.textContent = 'Close'; });
+    if ($('#n0').value === '청') $('#n0').value = 'Blue';
+    if ($('#n1').value === '홍') $('#n1').value = 'Red';
+    S.names = ['Blue', 'Red'];
+  }
+  (function () {
+    const b = document.getElementById('langBtn'); if (!b) return;
+    b.textContent = LANG === 'en' ? '한국어' : 'English';
+    b.setAttribute('lang', LANG === 'en' ? 'ko' : 'en');
+    b.addEventListener('click', () => {
+      store.set('lang', LANG === 'en' ? 'ko' : 'en');
+      const u = new URL(location.href); u.searchParams.delete('lang'); location.replace(u.toString());
+    });
+  })();
+
   // ---------- 로비 ----------
   document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
   function setMode(m) {
@@ -726,7 +822,7 @@
   $('#startBtn').addEventListener('click', () => startLocal(false));
   $('#againBtn').addEventListener('click', () => { if (S.mode === 'online') { if (S.isHost) hostStart(true); } else startLocal(true); });
   $('#toLobby').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); });
-  $('#quitBtn').addEventListener('click', () => { if (confirm('판을 접을까요?')) { clearTimers(); leaveNet(); forgetRoom(); show('lobby'); } });
+  $('#quitBtn').addEventListener('click', () => { if (confirm(L('판을 접을까요?', 'Quit this game?'))) { clearTimers(); leaveNet(); forgetRoom(); show('lobby'); } });
   document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => { $('#m' + (b.dataset.open === 'rules' ? 'Rules' : 'About')).hidden = false; }));
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal').hidden = true));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.hidden = true; }));
@@ -766,7 +862,7 @@
       if (BIG.has(n)) h += `<circle cx="${x}" cy="${y}" r="5.6" class="node big"/><circle cx="${x}" cy="${y}" r="3.4" class="node inner"/>`;
       else h += `<circle cx="${x}" cy="${y}" r="3.4" class="node"/>`;
     }
-    h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">출발 · 도착</text>`;
+    h += `<text x="95.5" y="100.5" class="startlabel" style="text-anchor:end">${L('출발 · 도착', 'Start · Home')}</text>`;
     for (let n = 1; n <= 30; n++) { if (!P[n]) continue; const [x, y] = P[n]; h += `<circle cx="${x}" cy="${y}" r="6.2" class="target" data-node="${n}"/>`; }
     for (let p = 0; p < 2; p++) for (let i = 0; i < 4; i++) {
       h += `<g class="piece p${p} hidden" id="pc${p}${i}" data-p="${p}" data-i="${i}"><circle class="ring" r="5.2"/><circle class="body" r="3.7"/><text class="cnt"></text></g>`;
@@ -783,7 +879,7 @@
       if (S.mode === 'ai') { S.human = 1 - S.human; setSeg('#sideSeg', S.human); }
       else { const a = $('#n0').value; $('#n0').value = $('#n1').value; $('#n1').value = a; }
     }
-    beginGame([$('#n0').value.trim() || '청', $('#n1').value.trim() || '홍'], { exactFinish: S.exact, pie: S.pie, pieces: S.pieces });
+    beginGame([$('#n0').value.trim() || L('청', 'Blue'), $('#n1').value.trim() || L('홍', 'Red')], { exactFinish: S.exact, pie: S.pie, pieces: S.pieces });
   }
   function beginGame(names, cfg) {
     S.names = names;
@@ -813,7 +909,7 @@
       const box = $('#sticks' + p); box.innerHTML = '';
       for (let s = 0; s < 2; s++) {
         const b = document.createElement('button');
-        b.className = 'stick down'; b.dataset.p = p; b.dataset.s = s; b.setAttribute('aria-label', `${S.names[p]} 가락 ${s + 1}`);
+        b.className = 'stick down'; b.dataset.p = p; b.dataset.s = s; b.setAttribute('aria-label', `${S.names[p]} ${L('가락', 'stick')} ${s + 1}`);
         b.innerHTML = `<span class="face flat">${stickSVG(true)}</span><span class="face back">${stickSVG(false)}</span><span class="hint"></span>`;
         b.addEventListener('click', () => onStick(p, s));
         box.appendChild(b);
@@ -837,8 +933,8 @@
         const ok = canP && sc[s].ok;
         b.classList.toggle('can', ok);
         b.classList.toggle('banned', canP && !ok);
-        b.querySelector('.hint').textContent = canP ? '→ ' + Y.RESULT[sc[s].result] : '';
-        b.title = canP && !ok ? '이 가락을 뒤집으면 같은 판이 세 번째가 돼요 (반복 금지)' : '';
+        b.querySelector('.hint').textContent = canP ? '→ ' + R(sc[s].result) : '';
+        b.title = canP && !ok ? L('이 가락을 뒤집으면 같은 판이 세 번째가 돼요 (반복 금지)', 'Flipping this stick would repeat a position a third time (no-repeat rule)') : '';
         b.disabled = !ok;
       });
       $('#side' + p).classList.toggle('active', p === cur && g.winner == null);
@@ -846,7 +942,7 @@
       const atHome = g.pieces[p].filter(pc => !pc.done && pc.idx === 0 && pc.route === 'OUTER').length;
       const done = g.pieces[p].filter(pc => pc.done).length;
       home.querySelector('.dots').innerHTML = Array.from({ length: atHome }, () => '<span class="pc"></span>').join('');
-      home.querySelector('.cnt').textContent = `집 ${atHome} · 난 말 ${done}`;
+      home.querySelector('.cnt').textContent = L(`집 ${atHome} · 난 말 ${done}`, `Waiting ${atHome} · Home ${done}`);
     }
     const groups = {};
     for (let p = 0; p < 2; p++) for (let i = g.pieces[p].length; i < 4; i++) $('#pc' + p + i).classList.add('hidden'); // 3동 판: 4번째 말 자리는 비운다
@@ -879,31 +975,31 @@
       });
     }
     // 이름표: 온라인이면 내 편 표시
-    for (let p = 0; p < 2; p++) { $('#name' + p).textContent = S.names[p]; $('#tag' + p).textContent = (S.mode === 'online' && controls(p) ? '나 · ' : '') + (p === 0 ? '먼저' : '나중'); }
+    for (let p = 0; p < 2; p++) { $('#name' + p).textContent = S.names[p]; $('#tag' + p).textContent = (S.mode === 'online' && controls(p) ? L('나 · ', 'You · ') : '') + (p === 0 ? L('먼저', 'First') : L('나중', 'Second')); }
     // 상태줄
     const who = $('#stWho'), msg = $('#stMsg'), big = $('#stBig');
-    const KSTEP = ['', '한 칸', '두 칸', '세 칸', '네 칸', '다섯 칸'];
-    if (g.winner != null) { who.textContent = '판 끝'; msg.textContent = g.winner === -1 ? '둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부' : `${S.names[g.winner]} 승!`; big.innerHTML = g.winner === -1 ? '반' : '끝'; return; }
-    who.textContent = `${S.names[cur]}의 차례 · ${g.ply + 1}수`;
+    const KSTEP = LANG === 'en' ? ['', '1 space', '2 spaces', '3 spaces', '4 spaces', '5 spaces'] : ['', '한 칸', '두 칸', '세 칸', '네 칸', '다섯 칸'];
+    if (g.winner != null) { who.textContent = L('판 끝', 'Game over'); msg.textContent = g.winner === -1 ? L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들어 무승부', 'Draw — every legal move would repeat a position a third time') : L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`); big.innerHTML = g.winner === -1 ? L('반', '½') : L('끝', 'End'); return; }
+    who.textContent = L(`${S.names[cur]}의 차례 · ${g.ply + 1}수`, `${S.names[cur]}'s turn · move ${g.ply + 1}`);
     if (paused) {
-      msg.textContent = controls(1) ? '셋째 수를 보고 편을 골라요.' : `${S.names[1]}이(가) 편을 고르는 중…`;
-      big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
+      msg.textContent = controls(1) ? L('셋째 수를 보고 편을 골라요.', 'Look at move 3 and choose your side.') : L(`${S.names[1]}이(가) 편을 고르는 중…`, `${S.names[1]} is choosing a side…`);
+      big.innerHTML = `${R(Y.countUp(g.sticks))}<small>${L('지금', 'now')}</small>`;
     } else if (!flipped) {
       const sc = Y.stickChoices(g);
       const fo = sc.filter(x => x.ok).filter((x, i, a) => a.findIndex(y => y.result === x.result) === i);
       const blocked = sc.some(x => !x.ok);
-      if (isAI(cur)) msg.textContent = '컴퓨터가 수를 읽는 중…';
-      else if (!controls(cur)) msg.textContent = `${S.names[cur]}이(가) 가락을 고르는 중…`;
-      else if (g.ply === 0) msg.textContent = '첫 수는 도예요. 가락 하나를 톡 눌러 뒤집어요.';
-      else if (g.ply === 1) msg.textContent = '둘째 수는 개예요. 가락 하나를 톡 눌러 뒤집어요.';
-      else if (fo.length === 1) msg.textContent = blocked ? `${Y.RESULT[fo[0].result]}만 둘 수 있어요 — 다른 쪽은 같은 판이 세 번째가 돼요(반복 금지).` : `어느 가락을 뒤집어도 ${Y.RESULT[fo[0].result]}. 가락을 눌러요.`;
-      else msg.textContent = `${Y.RESULT[fo[0].result]} 또는 ${Y.RESULT[fo[1].result]} — 가락을 골라 뒤집어요.`;
-      big.innerHTML = `${Y.RESULT[Y.countUp(g.sticks)]}<small>지금</small>`;
+      if (isAI(cur)) msg.textContent = L('컴퓨터가 수를 읽는 중…', 'The computer is thinking…');
+      else if (!controls(cur)) msg.textContent = L(`${S.names[cur]}이(가) 가락을 고르는 중…`, `${S.names[cur]} is choosing a stick…`);
+      else if (g.ply === 0) msg.textContent = L('첫 수는 도예요. 가락 하나를 톡 눌러 뒤집어요.', 'Move 1 is always Pig (1). Tap a stick to flip it.');
+      else if (g.ply === 1) msg.textContent = L('둘째 수는 개예요. 가락 하나를 톡 눌러 뒤집어요.', 'Move 2 is always Dog (2). Tap a stick to flip it.');
+      else if (fo.length === 1) msg.textContent = blocked ? L(`${R(fo[0].result)}만 둘 수 있어요 — 다른 쪽은 같은 판이 세 번째가 돼요(반복 금지).`, `Only ${R(fo[0].result)} is allowed — the other stick would repeat a position a third time (no-repeat rule).`) : L(`어느 가락을 뒤집어도 ${R(fo[0].result)}. 가락을 눌러요.`, `Either stick gives ${R(fo[0].result)}. Tap a stick.`);
+      else msg.textContent = L(`${R(fo[0].result)} 또는 ${R(fo[1].result)} — 가락을 골라 뒤집어요.`, `${R(fo[0].result)} or ${R(fo[1].result)} — choose a stick to flip.`);
+      big.innerHTML = `${R(Y.countUp(g.sticks))}<small>${L('지금', 'now')}</small>`;
     } else {
-      msg.textContent = controls(cur) ? `${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.` + (choices.some(o => !o.ok) ? ' (막힌 말은 반복 금지)' : '') : `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]}이(가) 말을 옮겨요.`;
-      big.innerHTML = `${Y.RESULT[g.result]}!<small>${Y.STEPS[g.result]}칸</small>`;
+      msg.textContent = controls(cur) ? L(`${KSTEP[Y.STEPS[g.result]]} 가요. 옮길 말을 톡 눌러요.`, `Move ${KSTEP[Y.STEPS[g.result]]}. Tap the piece to move.`) + (choices.some(o => !o.ok) ? L(' (막힌 말은 반복 금지)', ' (some pieces are blocked by the no-repeat rule)') : '') : L(`${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]}이(가) 말을 옮겨요.`, `${KSTEP[Y.STEPS[g.result]]} — ${S.names[cur]} is moving a piece.`);
+      big.innerHTML = `${R(g.result)}!<small>${L(Y.STEPS[g.result] + '칸', KSTEP[Y.STEPS[g.result]])}</small>`;
     }
-    if (S.mode === 'online' && S.oppAway && g.winner == null) msg.textContent = '상대 연결이 끊겼어요. 돌아오면 이어서 둬요.';
+    if (S.mode === 'online' && S.oppAway && g.winner == null) msg.textContent = L('상대 연결이 끊겼어요. 돌아오면 이어서 둬요.', 'Your opponent disconnected. Play resumes when they return.');
     $('#hintBtn').hidden = S.mode === 'online';
   }
 
@@ -926,7 +1022,7 @@
     const from = Y.nodeOf(g.pieces[g.turn][+el.dataset.i]);
     const c = Y.moveChoices(g).find(o => o.from === from);
     if (c && c.ok) doMove(from, false);
-    else if (c) toast('그 말을 옮기면 같은 판이 세 번째가 돼요 (반복 금지)');
+    else if (c) toast(L('그 말을 옮기면 같은 판이 세 번째가 돼요 (반복 금지)', 'Moving that piece would repeat a position a third time (no-repeat rule)'));
   }
   function onTarget(node) {
     const g = S.g; if (!g.pending || S.busy || !controls(g.turn)) return;
@@ -937,7 +1033,7 @@
     const g = S.g; if (!g || !g.pending || S.busy || p !== g.turn || !controls(p)) return;
     const c = Y.moveChoices(g).find(o => o.from === 0);
     if (c && c.ok) doMove(0, false);
-    else if (c) toast('새 말을 내면 같은 판이 세 번째가 돼요 (반복 금지)');
+    else if (c) toast(L('새 말을 내면 같은 판이 세 번째가 돼요 (반복 금지)', 'Entering a new piece would repeat a position a third time (no-repeat rule)'));
   });
 
   function doMove(from, remote) {
@@ -950,8 +1046,8 @@
     if (opt.stacks.length) S.stats.stack++;
     addLog(g.turn, g.result, opt);
     render();
-    if (opt.captures.length) toast(`${S.names[g.turn]}이(가) ${S.names[1 - g.turn]}의 말 ${opt.captures.length}동을 잡았어요!`);
-    else if (opt.to === Y.F) toast(`${S.names[g.turn]} 말 ${opt.ids.length + opt.stacks.length}동이 났어요!`);
+    if (opt.captures.length) toast(L(`${S.names[g.turn]}이(가) ${S.names[1 - g.turn]}의 말 ${opt.captures.length}동을 잡았어요!`, `${S.names[g.turn]} captured ${opt.captures.length} ${S.names[1 - g.turn]} piece${opt.captures.length > 1 ? 's' : ''}!`));
+    else if (opt.to === Y.F) toast(L(`${S.names[g.turn]} 말 ${opt.ids.length + opt.stacks.length}동이 났어요!`, `${S.names[g.turn]} brought ${opt.ids.length + opt.stacks.length} piece${opt.ids.length + opt.stacks.length > 1 ? 's' : ''} home!`));
     if (S.g.winner != null) { later(showResult, 1200); return; }
     // 공평 규칙: 셋째 수 뒤 나중 편이 편을 고른다
     if (S.pieState === 'wait' && S.g.ply === 3) { S.pieState = 'ask'; pieAsk(); return; }
@@ -966,7 +1062,7 @@
       later(() => { const swap = Y.valueOf(S.g, Math.max(S.depth, 4), 0) > Y.valueOf(S.g, Math.max(S.depth, 4), 1); pieDecide(swap, false); }, 700);
       return;
     }
-    if (controls(1)) { panel.hidden = false; $('#pieMsg').textContent = `${S.names[0]}이(가) 셋째 수를 뒀어요. 지금 판을 보고 청(먼저)과 홍(나중) 중 어느 편을 가질지 골라요.`; }
+    if (controls(1)) { panel.hidden = false; $('#pieMsg').textContent = L(`${S.names[0]}이(가) 셋째 수를 뒀어요. 지금 판을 보고 청(먼저)과 홍(나중) 중 어느 편을 가질지 골라요.`, `${S.names[0]} has played move 3. Look at the board and choose your side: Blue (moves first) or Red (moves second).`); }
     else panel.hidden = true;
   }
   function pieDecide(swap, remote) {
@@ -978,17 +1074,17 @@
       if (S.mode === 'ai') S.human = 1 - S.human;
       else if (S.mode === 'hotseat') { S.names = [S.names[1], S.names[0]]; $('#n0').value = S.names[0]; $('#n1').value = S.names[1]; }
       else if (S.sides) { const ids = Object.keys(S.sides); ids.forEach(id => S.sides[id] = 1 - S.sides[id]); S.names = [S.names[1], S.names[0]]; }
-      toast('편을 바꿨어요');
-    } else toast('편을 그대로 둬요');
+      toast(L('편을 바꿨어요', 'Sides swapped'));
+    } else toast(L('편을 그대로 둬요', 'Sides kept'));
     render();
     maybeAI();
   }
 
   function addLog(p, r, opt) {
-    const where = n => n === 0 ? '집' : n === Y.F ? '완주' : n === 22 ? '가운데' : n === Y.START ? '출발점' : n + '칸';
-    const extra = (opt.captures.length ? ' · 잡음' : '') + (opt.stacks.length ? ' · 업음' : '');
+    const where = n => placeName(n);
+    const extra = (opt.captures.length ? L(' · 잡음', ' · capture') : '') + (opt.stacks.length ? L(' · 업음', ' · stack') : '');
     const line = document.createElement('div');
-    line.innerHTML = `${S.g.ply}. <b>${S.names[p]}</b> ${Y.RESULT[r]} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
+    line.innerHTML = `${S.g.ply}. <b>${S.names[p]}</b> ${R(r)} — ${where(opt.from)} → ${where(opt.to)}${extra}`;
     $('#log').prepend(line);
   }
 
@@ -1010,22 +1106,22 @@
       const opts = Y.moveChoices(g).filter(o => o.ok);
       let best = null, bv = -Infinity;
       opts.forEach(o => { const v = Y.evaluate(o.next, g.turn); if (v > bv) { bv = v; best = o; } });
-      toast(`훈수: ${best.from === 0 ? '새 말을 내보내요' : best.from + '칸의 말을 옮겨요'}`);
+      toast(L(`훈수: ${best.from === 0 ? '새 말을 내보내요' : best.from + '칸의 말을 옮겨요'}`, `Hint: ${best.from === 0 ? 'enter a new piece' : 'move the piece on #' + best.from}`));
     } else {
       const m = Y.bestMove(g, Math.max(S.depth, 4));
       const stick = $(`#sticks${g.turn} .stick[data-s="${m.stick}"]`);
       stick.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 500, iterations: 2 });
-      toast(`훈수: ${m.stick + 1}번 가락을 뒤집어 ${Y.RESULT[m.result]} → ${m.from === 0 ? '새 말' : m.from + '칸 말'}을 ${m.to === Y.F ? '완주' : m.to + '칸으로'}${m.captures.length ? ' (잡기)' : ''}`);
+      toast(L(`훈수: ${m.stick + 1}번 가락을 뒤집어 ${R(m.result)} → ${m.from === 0 ? '새 말' : m.from + '칸 말'}을 ${m.to === Y.F ? '완주' : m.to + '칸으로'}${m.captures.length ? ' (잡기)' : ''}`, `Hint: flip stick ${m.stick + 1} for ${R(m.result)} → move ${m.from === 0 ? 'a new piece' : 'the piece on #' + m.from} ${m.to === Y.F ? 'home' : 'to #' + m.to}${m.captures.length ? ' (capture)' : ''}`));
     }
   }
 
   function showResult() {
     const g = S.g;
     $('#resTitle').className = g.winner === -1 ? 'draw' : 'p' + g.winner;
-    if (g.winner === -1) { $('#resTitle').textContent = '무승부'; $('#resSub').textContent = '둘 수 있는 수가 모두 같은 판을 세 번째로 만들었어요.'; }
+    if (g.winner === -1) { $('#resTitle').textContent = L('무승부', 'Draw'); $('#resSub').textContent = L('둘 수 있는 수가 모두 같은 판을 세 번째로 만들었어요.', 'Every legal move would have repeated a position a third time.'); }
     else {
-      const mine = S.mode === 'online' ? (controls(g.winner) ? ' 내가 이겼어요!' : (S.sides && S.sides[S.myId] != null ? ' 다음 판엔 꼭…' : '')) : '';
-      $('#resTitle').textContent = `${S.names[g.winner]} 승!`; $('#resSub').textContent = `${S.names[g.winner]}이(가) ${g.npieces === 3 ? '세' : '네'} 동을 모두 내보냈어요.` + mine;
+      const mine = S.mode === 'online' ? (controls(g.winner) ? L(' 내가 이겼어요!', ' You won!') : (S.sides && S.sides[S.myId] != null ? L(' 다음 판엔 꼭…', ' Next time…') : '')) : '';
+      $('#resTitle').textContent = L(`${S.names[g.winner]} 승!`, `${S.names[g.winner]} wins!`); $('#resSub').textContent = L(`${S.names[g.winner]}이(가) ${g.npieces === 3 ? '세' : '네'} 동을 모두 내보냈어요.`, `${S.names[g.winner]} brought all ${g.npieces} pieces home.`) + mine;
     }
     $('#rsPly').textContent = g.ply; $('#rsCap').textContent = S.stats.cap; $('#rsStack').textContent = S.stats.stack;
     $('#againBtn').hidden = S.mode === 'online' && !S.isHost;
@@ -1036,16 +1132,16 @@
   // ---------- 온라인 ----------
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function makeCode() { let c = ''; for (let i = 0; i < 4; i++) c += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return c; }
-  function myName() { const n = ($('#nick').value || '').trim(); if (n) store.set('nick', n); return n || '손님'; }
+  function myName() { const n = ($('#nick').value || '').trim(); if (n) store.set('nick', n); return n || L('손님', 'Guest'); }
   function send(type, payload) {
     if (S.mode !== 'online' || !S.net) return;
     S.net.send({ type: 'broadcast', event: type, payload: Object.assign({}, payload, { from: S.myId }) });
   }
   function setConn(t, off) { ['#conn', '#connGame'].forEach(id => { const el = $(id); el.textContent = t; el.classList.toggle('off', !!off); }); }
 
-  $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.'); enterRoom(makeCode(), true); });
+  $('#mkRoom').addEventListener('click', () => { if (!SUPA_URL || !window.supabase) return toast(L('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.', 'Could not load the online module. Please refresh.')); enterRoom(makeCode(), true); });
   $('#joinInvite').addEventListener('click', () => {
-    if (!($('#nick').value || '').trim()) { $('#nick').focus(); return toast('이름을 먼저 적어 주세요'); }
+    if (!($('#nick').value || '').trim()) { $('#nick').focus(); return toast(L('이름을 먼저 적어 주세요', 'Please enter your name first')); }
     const code = S.invite; S.invite = null;
     $('#invite').hidden = true; $('#joinInvite').hidden = true; $('#mkRoom').hidden = false; $('#joinRoomBtn').parentElement.hidden = false; document.querySelector('.mode-list').hidden = false;
     enterRoom(code, false);
@@ -1054,10 +1150,10 @@
   $('#codeIn').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); e.target.value = v; if (v.length === 4) enterRoom(v, false); });
   $('#leaveRoom').addEventListener('click', () => { leaveNet(); forgetRoom(); show('lobby'); });
   $('#roomStart').addEventListener('click', () => hostStart(false));
-  $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(roomLink()); toast('링크를 복사했어요'); } catch (e) { toast(roomLink()); } });
+  $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(roomLink()); toast(L('링크를 복사했어요', 'Link copied')); } catch (e) { toast(roomLink()); } });
   $('#shareLink').addEventListener('click', async () => {
-    const data = { title: '윷두기', text: `윷두기 한 판 둘까요? 방 코드 ${S.room}`, url: roomLink() };
-    if (navigator.share) { try { await navigator.share(data); } catch (e) {} } else { try { await navigator.clipboard.writeText(roomLink()); toast('링크를 복사했어요'); } catch (e) { toast(roomLink()); } }
+    const data = { title: L('윷두기', 'Yutdugi'), text: L(`윷두기 한 판 둘까요? 방 코드 ${S.room}`, `Play a game of Yutdugi with me? Room code ${S.room}`), url: roomLink() };
+    if (navigator.share) { try { await navigator.share(data); } catch (e) {} } else { try { await navigator.clipboard.writeText(roomLink()); toast(L('링크를 복사했어요', 'Link copied')); } catch (e) { toast(roomLink()); } }
   });
   function roomLink() { const u = new URL(location.href); u.search = '?room=' + S.room; return u.toString(); }
 
@@ -1084,11 +1180,11 @@
   function checkAway() {
     if (S.mode !== 'online' || !S.net || !S.g || !S.sides || S.g.winner != null) { S.oppAway = false; return; }
     const gone = Object.keys(S.sides).some(id => id !== S.myId && !S.roster[id]);
-    if (gone && !S.oppAway) { S.oppAway = true; toast('상대 연결이 끊겼어요'); }
-    else if (!gone && S.oppAway) { S.oppAway = false; toast('상대가 돌아왔어요'); }
+    if (gone && !S.oppAway) { S.oppAway = true; toast(L('상대 연결이 끊겼어요', 'Opponent disconnected')); }
+    else if (!gone && S.oppAway) { S.oppAway = false; toast(L('상대가 돌아왔어요', 'Opponent is back')); }
   }
   function enterRoom(code, host) {
-    if (!window.supabase) return toast('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.');
+    if (!window.supabase) return toast(L('온라인 연결 모듈을 불러오지 못했어요. 새로고침해 주세요.', 'Could not load the online module. Please refresh.'));
     if (!client) client = supabase.createClient(SUPA_URL, SUPA_KEY, { realtime: { params: { eventsPerSecond: 20 } } });
     leaveNet();
     S.mode = 'online'; S.room = code; S.isHost = host; S.myId = tabStore.get('pid') || (Math.random().toString(36).slice(2, 10)); tabStore.set('pid', S.myId);
@@ -1097,7 +1193,7 @@
     S.sides = null; S.peers = [];
     history.replaceState(null, '', location.pathname + '?room=' + code); // 새로고침하면 같은 방으로 돌아온다
     $('#roomCode').textContent = code; $('#players').innerHTML = ''; $('#hostPanel').hidden = !host; $('#guestNote').hidden = host;
-    setConn('연결 중…');
+    setConn(L('연결 중…', 'Connecting…'));
     show('room');
     const ch = client.channel('yut:' + code, { config: { broadcast: { self: false } } });
     S.net = ch;
@@ -1124,7 +1220,7 @@
       if (!acceptState(payload)) return;
       S.names = payload.names; S.sides = payload.sides; S.exact = true; S.pie = !!payload.cfg.pie; S.pieces = 4; S.pieState = payload.pieState; S.stats = payload.stats || { cap: 0, stack: 0 };
       S.g = payload.g; $('#name0').textContent = S.names[0]; $('#name1').textContent = S.names[1];
-      $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => n === 0 ? '집' : n === Y.F ? '완주' : n === 22 ? '가운데' : n === Y.START ? '출발점' : n + '칸'; line.innerHTML = (i + 1) + '. <b>' + S.names[h.p] + '</b> ' + Y.RESULT[h.result] + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? ' · 잡음' : '') + (h.stacked ? ' · 업음' : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
+      $('#log').innerHTML = ''; S.g.history.forEach((h, i) => { const line = document.createElement('div'); const w = n => placeName(n); line.innerHTML = (i + 1) + '. <b>' + S.names[h.p] + '</b> ' + R(h.result) + ' — ' + w(h.from) + ' → ' + w(h.to) + (h.captured ? L(' · 잡음', ' · capture') : '') + (h.stacked ? L(' · 업음', ' · stack') : ''); $('#log').prepend(line); }); buildSticks(); show('game'); render();
       if (S.pieState === 'ask') pieAsk();
       if (S.g.winner != null) showResult();
     });
@@ -1136,9 +1232,9 @@
     }, HEARTBEAT);
     refreshPeers();
     ch.subscribe(status => {
-      if (status === 'SUBSCRIBED') { S.connected = true; setConn('연결됨'); send('hello', { name: myName(), ts: S.joinTs }); }
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { S.connected = false; setConn('연결이 끊겼어요 — 다시 시도 중', true); }
-      else if (status === 'CLOSED') { S.connected = false; setConn('연결 종료', true); }
+      if (status === 'SUBSCRIBED') { S.connected = true; setConn(L('연결됨', 'Connected')); send('hello', { name: myName(), ts: S.joinTs }); }
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { S.connected = false; setConn(L('연결이 끊겼어요 — 다시 시도 중', 'Disconnected — retrying'), true); }
+      else if (status === 'CLOSED') { S.connected = false; setConn(L('연결 종료', 'Connection closed'), true); }
     });
   }
   function requestSync() { send('hello', { name: myName(), ts: S.joinTs }); }
@@ -1158,13 +1254,13 @@
   function forgetRoom() { if (/[?&]room=/.test(location.search)) history.replaceState(null, '', location.pathname); }
   function renderRoom() {
     const box = $('#players');
-    const rows = S.peers.slice(0, 2).map((p, i) => `<div class="player p${i}"><span class="dot"></span><span>${esc(p.name)}</span><span class="me">${p.id === S.myId ? '나' : ''}${i === 0 ? ' · 방장' : ''}</span></div>`);
-    while (rows.length < 2) rows.push('<div class="player empty"><span class="dot"></span><span>친구를 기다리는 중…</span></div>');
-    if (S.peers.length > 2) rows.push(`<div class="player"><span class="dot"></span><span>구경 ${S.peers.length - 2}명</span></div>`);
+    const rows = S.peers.slice(0, 2).map((p, i) => `<div class="player p${i}"><span class="dot"></span><span>${esc(p.name)}</span><span class="me">${p.id === S.myId ? L('나', 'You') : ''}${i === 0 ? L(' · 방장', ' · host') : ''}</span></div>`);
+    while (rows.length < 2) rows.push('<div class="player empty"><span class="dot"></span><span>' + L('친구를 기다리는 중…', 'Waiting for a friend…') + '</span></div>');
+    if (S.peers.length > 2) rows.push(`<div class="player"><span class="dot"></span><span>${L(`구경 ${S.peers.length - 2}명`, `${S.peers.length - 2} watching`)}</span></div>`);
     box.innerHTML = rows.join('');
     $('#hostPanel').hidden = !S.isHost; $('#guestNote').hidden = S.isHost;
     const ready = S.peers.length >= 2;
-    $('#roomStart').disabled = !ready; $('#roomStart').textContent = ready ? '판 벌이기' : '친구를 기다리는 중…';
+    $('#roomStart').disabled = !ready; $('#roomStart').textContent = ready ? L('판 벌이기', 'Start game') : L('친구를 기다리는 중…', 'Waiting for a friend…');
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   let lastFirst = null;

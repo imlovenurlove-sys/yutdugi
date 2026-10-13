@@ -1,0 +1,167 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#FFF6E5">
+<meta name="description" content="How to play Yutdugi, the Korean stick game you win by thinking: flip one stick, read all four, move your pieces.">
+<meta property="og:title" content="How to play Yutdugi"><meta property="og:description" content="The Korean stick game you win by thinking — illustrated rules."><meta property="og:image" content="https://imlovenurlove-sys.github.io/yutdugi/og-card.png">
+<link rel="icon" href="icon-192.png"><title>How to play Yutdugi</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  :root { color-scheme: light; --bg:#FFF6E5; --card:#FFFFFF; --edge:#F2D9B8; --ink:#2B2B2B; --ink-2:#4A4A4A; --ink-3:#9A9083; --cheong:#2E6BE6; --cheong-zone:#E3ECFF; --hong:#E0452E; --hong-zone:#FFE6E0; --hong-sub:#B8624F; --hwang:#F7B500; --hwang-zone:#FFF0C2; --nok:#2FA36B; --ja:#7B4BC9; }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body { margin:0; color:var(--ink); font-family:"Gowun Dodum","Apple SD Gothic Neo",system-ui,sans-serif; font-size:16px; line-height:1.65; }
+  h1, h2, h3, .jua { font-family:"Jua","Gowun Dodum",sans-serif; font-weight:400; text-wrap:balance; }
+  .wrap { max-width:680px; margin:0 auto; padding:20px 16px 56px; }
+  .stripe { display:flex; height:8px; border-radius:4px; overflow:hidden; }
+  .stripe i { flex:1; } .stripe i:nth-child(1){background:var(--cheong)} .stripe i:nth-child(2){background:var(--hong)} .stripe i:nth-child(3){background:var(--hwang)} .stripe i:nth-child(4){background:var(--nok)} .stripe i:nth-child(5){background:var(--ja)}
+  header { text-align:center; padding:22px 0 8px; }
+  .eyebrow { font-size:12px; letter-spacing:.2em; color:var(--hong-sub); text-transform:uppercase; margin:0; }
+  header h1 { font-size:46px; line-height:1.05; margin:6px 0 4px; color:var(--hong); }
+  header .sub { font-size:18px; color:var(--ink-2); margin:0 0 16px; }
+  .play { display:inline-block; font-family:"Jua",sans-serif; font-size:20px; color:#fff; background:var(--hong); text-decoration:none; padding:12px 28px; border-radius:999px; box-shadow:0 5px 0 #B23322; }
+  .card { background:var(--card); border:2px solid var(--edge); border-radius:20px; padding:18px 18px 16px; margin:18px 0; box-shadow:0 4px 0 var(--edge); }
+  .card h2 { font-size:25px; margin:0 0 8px; line-height:1.2; }
+  .card h2 .n { display:inline-grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--hwang); font-size:18px; margin-right:8px; vertical-align:3px; }
+  .card p { margin:8px 0; } ul, ol { padding-left:22px; margin:8px 0; } li { margin:6px 0; }
+  .stk { display:inline-block; width:112px; height:22px; filter:drop-shadow(0 2px 2px rgba(0,0,0,.22)); }
+  .stk svg { display:block; width:100%; height:100%; }
+  .pair { display:flex; gap:22px; justify-content:center; flex-wrap:wrap; margin:12px 0 4px; text-align:center; font-size:14px; color:var(--ink-2); }
+  .pair figure { margin:0; display:grid; gap:6px; justify-items:center; }
+  .table { display:grid; gap:8px; margin:12px auto 6px; max-width:360px; }
+  .hand { display:grid; grid-template-columns:52px auto auto; align-items:center; gap:8px; padding:8px 10px; border-radius:14px; }
+  .hand .who { font-family:"Jua",sans-serif; font-size:16px; }
+  .hand.blue { background:var(--cheong-zone); } .hand.blue .who { color:var(--cheong); }
+  .hand.red { background:var(--hong-zone); } .hand.red .who { color:var(--hong); }
+  .hand .stk { width:100px; height:20px; }
+  .verdict { text-align:center; font-family:"Jua",sans-serif; font-size:22px; margin:6px 0 0; }
+  .verdict small { display:block; font-family:"Gowun Dodum",sans-serif; font-size:13px; color:var(--ink-3); }
+  table.ladder { width:100%; border-collapse:collapse; margin:10px 0 4px; }
+  table.ladder td, table.ladder th { padding:8px 6px; border-top:1px solid var(--edge); text-align:left; }
+  table.ladder th { font-weight:400; font-size:12px; color:var(--ink-3); border-top:0; }
+  table.ladder .nm { font-family:"Jua",sans-serif; font-size:20px; }
+  table.ladder .mv { font-weight:700; }
+  .ladderline { display:flex; justify-content:space-between; align-items:center; font-family:"Jua",sans-serif; font-size:19px; background:var(--hwang-zone); border-radius:14px; padding:10px 12px; margin:10px 0; }
+  .ladderline .a { color:var(--ink-3); font-size:14px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+  .opt { border:2px dashed var(--edge); border-radius:14px; padding:10px; text-align:center; font-size:14px; }
+  .opt b { display:block; font-family:"Jua",sans-serif; font-weight:400; font-size:20px; }
+  svg.board { display:block; width:100%; max-width:380px; margin:8px auto; }
+  .ln { stroke:var(--ink); stroke-width:1.2; fill:none; }
+  .nd { fill:var(--bg); stroke:var(--ink); stroke-width:1.3; } .nd.big { stroke-width:1.8; } .nd.in { fill:none; stroke-width:1.4; }
+  .sc { fill:none; stroke-width:4.4; stroke-linecap:round; stroke-linejoin:round; opacity:.32; }
+  .sc1 { stroke:var(--cheong); } .sc2 { stroke:var(--hong); }
+  .arw { fill:none; stroke:var(--hwang); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .lb { font-family:"Gowun Dodum",sans-serif; font-size:4px; fill:var(--ink-2); }
+  .key { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; font-size:14px; color:var(--ink-2); }
+  .key i { display:inline-block; width:22px; height:6px; border-radius:3px; vertical-align:2px; margin-right:6px; }
+  .note { background:var(--hwang-zone); border-radius:14px; padding:10px 14px; font-size:15px; }
+  .quick { background:var(--hwang); border-color:#E0A400; box-shadow:0 4px 0 #E0A400; }
+  .quick ol { font-weight:700; }
+  footer { text-align:center; color:var(--ink-3); font-size:13px; margin-top:26px; }
+  footer a { color:var(--ink-2); }
+  a { color:#1F4FB0; }
+  @media (max-width:420px) { header h1 { font-size:38px; } .card h2 { font-size:22px; } .stk { width:92px; height:18px; } .hand .stk { width:86px; height:17px; } .ladderline { font-size:16px; padding:8px; } }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE3A8"/><stop offset="1" stop-color="#E6B461" stop-opacity=".9"/></linearGradient>
+  <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A66A38"/><stop offset=".5" stop-color="#7A4A26"/><stop offset="1" stop-color="#4E2D14"/></linearGradient>
+</defs></svg>
+<main class="wrap">
+  <div class="stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <header>
+    <p class="eyebrow">How to play</p>
+    <h1>Yutdugi</h1>
+    <p class="sub">The Korean stick game you win by thinking</p>
+    <a class="play" href="./?lang=en">Play now</a>
+  </header>
+
+  <section class="card">
+    <h2>A classic, without the luck</h2>
+    <p>For centuries Koreans have played a board game with four wooden sticks: you throw them, count how many land flat side up, and race your pieces around the board. It is officially called <i>Yunnori</i> and has been a National Intangible Cultural Heritage of Korea since 2022.</p>
+    <p><b>Yutdugi keeps the board and the sticks but takes away the throw.</b> Every stick is in plain sight and you change the result yourself, one flip at a time. Like chess or Go, it is a game of perfect information: whoever reads further ahead wins.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">1</span>The sticks</h2>
+    <p>Each stick has two sides. Only the <b>flat side</b> counts.</p>
+    <div class="pair">
+      <figure><span class="stk up"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#F3C77A"></rect><rect width="190" height="38" rx="19" fill="url(#gf)"></rect><line x1="22.8" y1="11.4" x2="167.2" y2="10.64" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="19" x2="167.2" y2="18.240000000000002" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="26.599999999999998" x2="167.2" y2="25.840000000000003" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line></svg></span><figcaption><b>Flat side</b> — counts</figcaption></figure>
+      <figure><span class="stk"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#7A4A26"></rect><rect width="190" height="38" rx="19" fill="url(#gb)"></rect><path d="M43.32 9.12 L63.080000000000005 28.880000000000003 M63.080000000000005 9.12 L43.32 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path><path d="M85.12 9.12 L104.88 28.880000000000003 M104.88 9.12 L85.12 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path><path d="M126.91999999999999 9.12 L146.67999999999998 28.880000000000003 M146.67999999999998 9.12 L126.91999999999999 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path></svg></span><figcaption><b>Round side</b> (marked X) — doesn’t</figcaption></figure>
+    </div>
+    <p>There are four sticks in play. <b>Each player holds two</b>, and the result is always read from <b>all four together</b>.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">2</span>Reading the result</h2>
+    <p>Count the flat sides showing. The five results carry the animal names of the traditional game — pig, dog, sheep, cow and horse — and tell you how far to move.</p>
+    <table class="ladder"><tr><th>Result</th><th>Sticks</th><th>Move</th></tr><tr><td class="nm">Horse</td><td>0 flat sides up</td><td class="mv">5 spaces</td></tr><tr><td class="nm">Pig</td><td>1 flat side up</td><td class="mv">1 space</td></tr><tr><td class="nm">Dog</td><td>2 flat sides up</td><td class="mv">2 spaces</td></tr><tr><td class="nm">Sheep</td><td>3 flat sides up</td><td class="mv">3 spaces</td></tr><tr><td class="nm">Cow</td><td>4 flat sides up</td><td class="mv">4 spaces</td></tr></table>
+    <div class="table" aria-label="Example: three flat sides showing">
+      <div class="hand blue"><span class="who">Blue</span><span class="stk up"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#F3C77A"></rect><rect width="190" height="38" rx="19" fill="url(#gf)"></rect><line x1="22.8" y1="11.4" x2="167.2" y2="10.64" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="19" x2="167.2" y2="18.240000000000002" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="26.599999999999998" x2="167.2" y2="25.840000000000003" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line></svg></span><span class="stk"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#7A4A26"></rect><rect width="190" height="38" rx="19" fill="url(#gb)"></rect><path d="M43.32 9.12 L63.080000000000005 28.880000000000003 M63.080000000000005 9.12 L43.32 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path><path d="M85.12 9.12 L104.88 28.880000000000003 M104.88 9.12 L85.12 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path><path d="M126.91999999999999 9.12 L146.67999999999998 28.880000000000003 M146.67999999999998 9.12 L126.91999999999999 28.880000000000003" stroke="#F6DFB0" stroke-width="2.6" stroke-linecap="round"></path></svg></span></div>
+      <div class="hand red"><span class="who">Red</span><span class="stk up"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#F3C77A"></rect><rect width="190" height="38" rx="19" fill="url(#gf)"></rect><line x1="22.8" y1="11.4" x2="167.2" y2="10.64" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="19" x2="167.2" y2="18.240000000000002" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="26.599999999999998" x2="167.2" y2="25.840000000000003" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line></svg></span><span class="stk up"><svg viewBox="0 0 190 38" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="190" height="38" rx="19" fill="#F3C77A"></rect><rect width="190" height="38" rx="19" fill="url(#gf)"></rect><line x1="22.8" y1="11.4" x2="167.2" y2="10.64" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="19" x2="167.2" y2="18.240000000000002" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line><line x1="22.8" y1="26.599999999999998" x2="167.2" y2="25.840000000000003" stroke="#D89A45" stroke-width="1" opacity=".55" stroke-linecap="round"></line></svg></span></div>
+    </div>
+    <p class="verdict">3 flat sides = Sheep<small>move 3 spaces</small></p>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">3</span>Your turn: flip exactly one</h2>
+    <p>On your turn you <b>must flip one of your own two sticks</b> — never none, never both, never your opponent’s. The flip changes the count by one, so the result moves <b>one step</b> along this ladder:</p>
+    <div class="ladderline" aria-label="Horse, Pig, Dog, Sheep, Cow ladder"><span>Horse</span><span class="a">↔</span><span>Pig</span><span class="a">↔</span><span>Dog</span><span class="a">↔</span><span>Sheep</span><span class="a">↔</span><span>Cow</span></div>
+    <p>In the example above it is Blue’s turn, with Sheep showing. Blue has two choices:</p>
+    <div class="two">
+      <div class="opt">Flip the round stick up<b>Cow · 4</b>four flat sides</div>
+      <div class="opt">Flip the flat stick down<b>Dog · 2</b>two flat sides</div>
+    </div>
+    <p>Then you move one of your pieces that many spaces. Every flip also changes what your opponent can do next — that is where the thinking comes in.</p>
+    <p class="note">The first two moves are fixed. All sticks start round side up, so move 1 is always <b>Pig</b> and move 2 is always <b>Dog</b>. The real game starts with move 3.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">4</span>Moving around the board</h2>
+    <svg class="board" viewBox="-4 -8 108 116" role="img" aria-label="Board with the outer path and the two shortcuts"><rect x="10" y="10" width="80" height="80" class="ln"/><line x1="90" y1="10" x2="10" y2="90" class="ln"/><line x1="10" y1="10" x2="90" y2="90" class="ln"/><path d="M90 10 L50 50 L10 90" class="sc sc1"/><path d="M10 10 L50 50 L90 90" class="sc sc2"/><g transform="translate(90 50) rotate(-90)"><path d="M-3 -2.6 L1.6 0 L-3 2.6" class="arw"/></g><g transform="translate(50 10) rotate(180)"><path d="M-3 -2.6 L1.6 0 L-3 2.6" class="arw"/></g><g transform="translate(10 50) rotate(90)"><path d="M-3 -2.6 L1.6 0 L-3 2.6" class="arw"/></g><g transform="translate(50 90) rotate(0)"><path d="M-3 -2.6 L1.6 0 L-3 2.6" class="arw"/></g><circle cx="90" cy="90" r="5.6" class="nd big"/><circle cx="90" cy="90" r="3.4" class="nd in"/><circle cx="90" cy="74" r="3.4" class="nd"/><circle cx="90" cy="58" r="3.4" class="nd"/><circle cx="90" cy="42" r="3.4" class="nd"/><circle cx="90" cy="26" r="3.4" class="nd"/><circle cx="90" cy="10" r="5.6" class="nd big"/><circle cx="90" cy="10" r="3.4" class="nd in"/><circle cx="74" cy="10" r="3.4" class="nd"/><circle cx="58" cy="10" r="3.4" class="nd"/><circle cx="42" cy="10" r="3.4" class="nd"/><circle cx="26" cy="10" r="3.4" class="nd"/><circle cx="10" cy="10" r="5.6" class="nd big"/><circle cx="10" cy="10" r="3.4" class="nd in"/><circle cx="10" cy="26" r="3.4" class="nd"/><circle cx="10" cy="42" r="3.4" class="nd"/><circle cx="10" cy="58" r="3.4" class="nd"/><circle cx="10" cy="74" r="3.4" class="nd"/><circle cx="10" cy="90" r="5.6" class="nd big"/><circle cx="10" cy="90" r="3.4" class="nd in"/><circle cx="26" cy="90" r="3.4" class="nd"/><circle cx="42" cy="90" r="3.4" class="nd"/><circle cx="58" cy="90" r="3.4" class="nd"/><circle cx="74" cy="90" r="3.4" class="nd"/><circle cx="50" cy="50" r="5.6" class="nd big"/><circle cx="50" cy="50" r="3.4" class="nd in"/><circle cx="76.67" cy="23.33" r="3.4" class="nd"/><circle cx="63.33" cy="36.67" r="3.4" class="nd"/><circle cx="36.67" cy="63.33" r="3.4" class="nd"/><circle cx="23.33" cy="76.67" r="3.4" class="nd"/><circle cx="23.33" cy="23.33" r="3.4" class="nd"/><circle cx="36.67" cy="36.67" r="3.4" class="nd"/><circle cx="63.33" cy="63.33" r="3.4" class="nd"/><circle cx="76.67" cy="76.67" r="3.4" class="nd"/><text x="99" y="101" class="lb" text-anchor="end">Start · Home</text><text x="99" y="2" class="lb" text-anchor="end">Corner A</text><text x="1" y="2" class="lb">Corner B</text><text x="50" y="62" class="lb" text-anchor="middle">Center</text></svg>
+    <div class="key"><span><i style="background:var(--hwang)"></i>Outer path</span><span><i style="background:rgba(46,107,230,.45)"></i>Shortcut from Corner A</span><span><i style="background:rgba(224,69,46,.45)"></i>Shortcut from Corner B</span></div>
+    <ul>
+      <li>Each player has <b>four pieces</b>. They enter at <b>Start</b> (bottom right) and travel up the right side, around the board.</li>
+      <li><b>Shortcuts:</b> if a piece stops <b>exactly</b> on Corner A, Corner B or the Center, its next move cuts across the diagonal. Pass over the spot without stopping and you stay on the outer path. From the Center, the shortcut heads straight for home.</li>
+      <li><b>Capture:</b> land on a space holding your opponent’s piece and it goes back off the board.</li>
+      <li><b>Stack:</b> land on your own piece and they move together from then on (and can be captured together).</li>
+      <li><b>Getting home:</b> stopping exactly on Start is not enough — a piece must move <b>past</b> it. Bring all four pieces home to win.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">5</span>Two rules that keep it fair</h2>
+    <p><b>No extra turns.</b> In the traditional game a capture, a Cow or a Horse earns another throw. Not here — play always passes to the other player.</p>
+    <p><b>No repeats.</b> You may not make a move that creates the same position (pieces, sticks and whose turn it is) for the <b>third time</b>. It works like ko in Go and stops endless back-and-forth. The game is a draw only if every legal move would break this rule; the game marks any move it blocks.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">6</span>Optional: the fair-start rule</h2>
+    <p>Moving first can be an advantage. With the fair-start rule on, the first player makes move 3 — the first real choice — and then <b>the second player decides which side to take</b>. A move that is too strong gets taken away and a weak one gets kept, so the first player has to aim for a balanced position.</p>
+  </section>
+
+  <section class="card">
+    <h2>Ways to play</h2>
+    <ul>
+      <li><b>Play online</b> — create a room and send the four-letter code or the link to a friend. No sign-up needed.</li>
+      <li><b>vs Computer</b> — Beginner, Normal or Expert.</li>
+      <li><b>Two players</b> — take turns on one phone, sitting face to face.</li>
+      <li><b>Hint</b> — tap it during a game to see the move the computer recommends.</li>
+    </ul>
+  </section>
+
+  <section class="card quick">
+    <h2>Quick reference</h2>
+    <ol>
+      <li>Flip exactly one of your own sticks.</li>
+      <li>Count flat sides across all four: Pig 1 · Dog 2 · Sheep 3 · Cow 4 · none = Horse 5.</li>
+      <li>Move one piece that far. Capture, stack, take shortcuts.</li>
+      <li>No extra turns. No third repeat of a position.</li>
+      <li>First to bring all four pieces past Start wins.</li>
+    </ol>
+  </section>
+
+  <p style="text-align:center;margin-top:24px"><a class="play" href="./?lang=en">Play Yutdugi</a></p>
+  <footer>
+    <p>Contact <a href="mailto:imlovenurlove@gmail.com">imlovenurlove@gmail.com</a> · <a href="privacy.html">Privacy notice (Korean)</a> · <a href="./?lang=ko">한국어로 하기</a></p>
+  </footer>
+</main>
+</body></html>
